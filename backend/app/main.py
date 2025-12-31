@@ -4,6 +4,7 @@ from sqlalchemy import select, update
 from sqlalchemy.dialects.postgresql import insert
 from dotenv import load_dotenv
 from datetime import datetime, UTC, timezone
+from typing import List
 
 from . import database, models, schemas
 
@@ -75,3 +76,37 @@ async def peer_ping(
 
     return {"status": "success"}
 
+@app.get("/search", response_model=List[schemas.SearchResult])
+async def search_files(
+    q: str,
+    db: Session = Depends(database.get_db)
+):
+    stmt = (
+        select(models.File, models.ActivePeer, models.User)
+        .join(models.ActivePeer, models.File.file_hash == models.ActivePeer.file_hash)
+        .join(models.User, models.ActivePeer.user_id == models.User.user_id)
+        .where(models.File.file_name.ilike(f"%{q}%"))
+    )
+
+    results = db.execute(stmt).all()
+    print(results)
+    grouped_files = {}
+
+    for file_obj, peer_obj, user_obj in results:
+        if file_obj.file_hash not in grouped_files:
+            grouped_files[file_obj.file_hash] = {
+                "file_name": file_obj.file_name,
+                "file_hash": file_obj.file_hash,
+                "file_size": file_obj.file_size,
+                "peers": []
+            }
+
+        grouped_files[file_obj.file_hash]["peers"].append({
+            "user_id": peer_obj.user_id,
+            "ip_address": peer_obj.ip_address,
+            "port": peer_obj.port,
+            "username": user_obj.username,
+            "last_heartbeat": peer_obj.last_heartbeat 
+        })
+
+    return list(grouped_files.values())
