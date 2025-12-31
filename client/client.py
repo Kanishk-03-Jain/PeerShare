@@ -6,9 +6,10 @@ import http.server
 import socketserver
 import threading
 from urllib.parse import urlparse, parse_qs
+import socket
 
 # CONFIGURATION
-SERVER_URL = "http://127.0.0.1:8000"
+SERVER_URL = "https://share-notes-fh45.onrender.com"
 MY_FOLDER = os.path.abspath("./shared_folder")  # Create this folder and put some dummy PDF/TXT files in it
 USER_ID = 1  # Matches the ID in your database
 MY_PORT = 8001 # The port we WILL serve files on later
@@ -49,6 +50,17 @@ class PeerRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_error(404, "File not found")
         else:
             self.send_error(404, "Unknown endpoint")
+def get_local_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # This doesn't actually connect, but forces the OS to find the preferred local IP
+        s.connect(('8.8.8.8', 1))
+        IP = s.getsockname()[0]
+    except Exception:
+        IP = '127.0.0.1'
+    finally:
+        s.close()
+    return IP
 
 def start_peer_server():
     """Starts the P2P server in a background thread"""
@@ -92,10 +104,14 @@ def scan_and_announce():
         print("No files found to share!")
         return
     
+    my_ip = get_local_ip()
+    print(f"📍 Broadcasting as: {my_ip}:{MY_PORT}")
+    
     # 2. Send to Server
     payload = {
         "user_id": USER_ID,
         "port": MY_PORT,
+        "ip_address": my_ip,
         "files": files_payload
     }
 

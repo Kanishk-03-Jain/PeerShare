@@ -22,8 +22,7 @@ async def announce_files(
     db: Session = Depends(database.get_db)
 ):
 
-    client_ip = request.client.host
-
+    client_ip = payload.ip_address if payload.ip_address else request.client.host
     print(f"User {payload.user_id} is online at {client_ip}:{payload.port}")
 
     # Validate if the user exits

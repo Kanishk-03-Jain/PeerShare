@@ -24,6 +24,7 @@ class FileAnnounce(BaseModel):
     """What the client sends to say 'I have this file'"""
     user_id: int
     port: int   # port on which client is listening on
+    ip_address: str | None = None
 
     files: List[FileBase]
 
