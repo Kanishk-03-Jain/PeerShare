@@ -51,7 +51,11 @@ async def announce_files(
             last_heartbeat=datetime.now(timezone.utc)
         ).on_conflict_do_update(
             constraint='active_peers_user_id_file_hash_key',
-            set_={ "last_heartbeat": datetime.now(timezone.utc)}
+            set_={ 
+                    "last_heartbeat": datetime.now(timezone.utc),
+                    "ip_address": client_ip,
+                    "port": payload.port
+                }
         )
         db.execute(peer_stmt)
     db.commit()
