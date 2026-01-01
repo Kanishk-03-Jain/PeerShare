@@ -1,12 +1,9 @@
 from fastapi import FastAPI, Request, Depends, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import select, update
-from sqlalchemy.dialects.postgresql import insert
 from dotenv import load_dotenv
-from datetime import datetime, UTC, timezone
-from typing import List
+from typing import List, Tuple
 
-from . import database, models, schemas
+from . import database, models, schemas, crud
 
 app = FastAPI()
 load_dotenv()
@@ -21,44 +18,21 @@ async def announce_files(
     request: Request,   # gets IP address of the client
     db: Session = Depends(database.get_db)
 ):
-
-    client_ip = payload.ip_address if payload.ip_address else request.client.host
-    print(f"User {payload.user_id} is online at {client_ip}:{payload.port}")
+    """Clients announces the files they have to the server"""
 
     # Validate if the user exits
-    user = db.scalar(select(models.User).where(models.User.user_id == payload.user_id))
+    user = crud.get_user(db, payload.user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    for file in payload.files:
-        # insert file if not exits
-        file_stmt = insert(models.File).values(
-            file_hash=file.file_hash,
-            file_name=file.file_name,
-            file_size=file.file_size
-        ).on_conflict_do_nothing(
-            index_elements=['file_hash']
-        )
-        db.execute(file_stmt)
+    # Determining the IP of the client
+    client_ip = payload.ip_address if payload.ip_address else request.client.host
+    print(f"User {payload.user_id} is online at {client_ip}:{payload.port}")
 
-        # upsert ActivePeers
-        peer_stmt = insert(models.ActivePeer).values(
-            user_id=payload.user_id,
-            file_hash=file.file_hash,
-            ip_address=client_ip,
-            port=payload.port,
-            last_heartbeat=datetime.now(timezone.utc)
-        ).on_conflict_do_update(
-            constraint='active_peers_user_id_file_hash_key',
-            set_={ 
-                    "last_heartbeat": datetime.now(timezone.utc),
-                    "ip_address": client_ip,
-                    "port": payload.port
-                }
-        )
-        db.execute(peer_stmt)
-    db.commit()
-    return { "status": "success", "announced": len(payload.files)}
+    # announce the files to the server and update db
+    count = crud.upsert_file_announcement(db, payload, client_ip)
+
+    return { "status": "success", "announced": count}
         
 
 @app.post("/ping/{user_id}")
@@ -66,15 +40,12 @@ async def peer_ping(
     user_id: int,
     db: Session = Depends(database.get_db)
 ):
-    stmt = (
-        update(models.ActivePeer)
-        .where(models.ActivePeer.user_id == user_id)
-        .values(last_heartbeat=datetime.now(timezone.utc))
-    )
-    result = db.execute(stmt)
-    db.commit()
+    """used to know if the user is active or not"""
 
-    if result.rowcount == 0:
+    # Update the last hartbeat of the user if still active
+    rows = crud.update_last_heartbeat(db, user_id)
+
+    if rows == 0:
         return {"status": "warning", "message": "No active sessions found for this user"}
 
     return {"status": "success"}
@@ -84,15 +55,11 @@ async def search_files(
     q: str,
     db: Session = Depends(database.get_db)
 ):
-    stmt = (
-        select(models.File, models.ActivePeer, models.User)
-        .join(models.ActivePeer, models.File.file_hash == models.ActivePeer.file_hash)
-        .join(models.User, models.ActivePeer.user_id == models.User.user_id)
-        .where(models.File.file_name.ilike(f"%{q}%"))
-    )
+    """search for the files"""
 
-    results = db.execute(stmt).all()
-    print(results)
+    # Search database for the required files
+    results: List[Tuple[models.File, models.ActivePeer, models.User]] = crud.search_files(db, q)
+    
     grouped_files = {}
 
     for file_obj, peer_obj, user_obj in results:
