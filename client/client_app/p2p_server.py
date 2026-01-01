@@ -70,7 +70,7 @@ class P2PServer:
 
         self.server_thread = threading.Thread(target=self.httpd.serve_forever, daemon=True)
         self.server_thread.start()
-        print(f"🌍 File Server running on port {self.port}")
+        print(f"File Server running on port {self.port}")
     
 
     

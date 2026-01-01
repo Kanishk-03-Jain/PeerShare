@@ -17,7 +17,7 @@ class ShareNotesClient:
 
     def login(self):
         """Resolve userid from usrname"""
-        print(f"🔑 Logging in as '{self.username}'...")
+        print(f"Logging in as '{self.username}'...")
         try:
             url = f"{config.TRACKER_SERVER_URL}/user/{self.username}"
             resp = requests.get(url)
