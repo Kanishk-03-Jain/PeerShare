@@ -1,7 +1,8 @@
 import requests
 import os
 
-TRACKER_URL = "http://127.0.0.1:8000"
+from client_app import config
+TRACKER_URL = config.TRACKER_SERVER_URL
 DOWNLOAD_DIR = "./downloads"
 
 def search_and_download():
