@@ -12,6 +12,19 @@ load_dotenv()
 async def root():
     return {"message": "Hello! This is root for share-notes server"}
 
+@app.get("/user/{username}")
+async def get_user_id(
+    username: str,
+    db: Session = Depends(database.get_db)
+):
+    """get userid from username"""
+    user = crud.get_user_by_username(db, username)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return {"user_id": user.user_id}
+
+
 @app.post("/announce")
 async def announce_files(
     payload: schemas.FileAnnounce,  # handles JSON body
