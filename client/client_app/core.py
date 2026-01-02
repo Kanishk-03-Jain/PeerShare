@@ -3,7 +3,7 @@ import requests
 import time
 import sys
 
-from . import upnp, utils, config, p2p_server
+from . import utils, config, p2p_server
 
 class ShareNotesClient:
     def __init__(self, username, port=config.DEFAULT_PORT, folder=config.DEFAULT_FOLDER):
@@ -38,15 +38,6 @@ class ShareNotesClient:
         if not os.path.exists(self.folder):
             os.makedirs(self.folder)
             print(f"Created shared folder at: {self.folder}")
-
-        public_ip = upnp.forward_port(self.port)
-
-        if public_ip:
-            print(f"UPnP Success! We are visible at {public_ip}")
-            self.local_ip = public_ip
-        else:
-            # If failed, we stay on Local IP (only works on same WiFi)
-            print("UPnP Failed. You are only visible on Local WiFi.")
         self.server.start()
     
     def announce_files(self):

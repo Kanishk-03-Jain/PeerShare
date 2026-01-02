@@ -30,13 +30,15 @@ def upsert_file_announcement(db: Session, payload: schemas.FileAnnounce, client_
             file_hash=file.file_hash,
             ip_address=client_ip,
             port=payload.port,
+            public_url=payload.public_url,
             last_heartbeat=datetime.now(timezone.utc)
         ).on_conflict_do_update(
             constraint='active_peers_user_id_file_hash_key',
             set_={ 
                     "last_heartbeat": datetime.now(timezone.utc),
                     "ip_address": client_ip,
-                    "port": payload.port
+                    "port": payload.port,
+                    "public_url": payload.public_url
                 }
         )
         db.execute(peer_stmt)

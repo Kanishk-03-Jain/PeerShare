@@ -25,7 +25,7 @@ class FileAnnounce(BaseModel):
     user_id: int
     port: int   # port on which client is listening on
     ip_address: str | None = None
-
+    public_url: str | None = None # Ngrok url
     files: List[FileBase]
 
 # --- Search Result Schemas ---

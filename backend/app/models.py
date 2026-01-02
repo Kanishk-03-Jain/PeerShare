@@ -35,6 +35,7 @@ class ActivePeer(Base):
 
     ip_address = Column(String(45), nullable=False) # Stores IPv4 or IPv6
     port = Column(Integer, nullable=False)
+    public_url = Column(String, nullable=True)
     last_heartbeat = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), index=True)
 
     # Relationships
