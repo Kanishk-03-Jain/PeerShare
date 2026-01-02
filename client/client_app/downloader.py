@@ -34,8 +34,6 @@ def download_from_peer(download_url: str, timeout: int, filename: str, filesize:
         print(f"Download Complete! Saved to: {save_path}")
         return True
         
-    except (requests.exceptions.ConnectTimeout, requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
-        print(f"{method_name} failed. Trying next...")
     except Exception as e:
         print(f"Error during {method_name}: {e}")
             
