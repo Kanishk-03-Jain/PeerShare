@@ -49,10 +49,17 @@ class ShareNotesClient:
             print("No files to share")
             return
         
+        ngrok_url = os.getenv("MY_PUBLIC_URL")
+
+        if ngrok_url:
+            ngrok_url = ngrok_url.rstrip("/")
+            print(f"Public Access Enabled: {ngrok_url}")
+        
         payload = {
             "user_id": self.user_id,
             "port": self.port,
             "ip_address": self.local_ip,
+            "public_url": ngrok_url,
             "files": files
         }
 
