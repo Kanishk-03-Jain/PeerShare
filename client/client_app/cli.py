@@ -34,10 +34,9 @@ def run_cli():
     print(f"\nConnecting to Peer '{peer['username']}' at {peer['ip_address']}...")
 
     # 5. Trigger Download
-    downloader.download_from_peer(
-        ip=peer['ip_address'],
-        port=peer['port'],
+    downloader.download_file_strategy(
+        peer_data=peer,
         filename=selected_file['file_name'],
-        file_size=selected_file['file_size'],
+        filesize=selected_file['file_size'],
         destination=str(config.DOWNLOAD_FOLDER)
     )
