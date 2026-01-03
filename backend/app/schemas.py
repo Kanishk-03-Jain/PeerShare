@@ -31,8 +31,10 @@ class FileAnnounce(BaseModel):
 # --- Search Result Schemas ---
 class PeerInfo(BaseModel):
     """Returns who has the file"""
+    user_id: int
     ip_address: str
     port: int
+    public_url: str | None = None
     username: str
     last_heartbeat: datetime
 
