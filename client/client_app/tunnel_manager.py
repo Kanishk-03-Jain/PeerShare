@@ -17,7 +17,7 @@ def start_ngrok_tunnel(port, auth_token=None):
         print("Starting ngrok tunnel...")
         conf.get_default().auth_token = token
 
-        tunnel = ngrok.connect(port, "tcp")
+        tunnel = ngrok.connect(port)
         public_url = tunnel.public_url
 
         print(f"Ngrok tunnel active at: {public_url}")
