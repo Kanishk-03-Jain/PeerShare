@@ -70,6 +70,9 @@ async def search_files(
 ):
     """search for the files"""
 
+    # Remove ghost entries in db
+    crud.remove_inactive_peers(db)
+
     # Search database for the required files
     results: List[Tuple[models.File, models.ActivePeer, models.User]] = crud.search_files(db, q)
     

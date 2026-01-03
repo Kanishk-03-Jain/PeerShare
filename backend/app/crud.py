@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import select, update
+from sqlalchemy import select, update, delete
 from sqlalchemy.dialects.postgresql import insert
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 from . import models, schemas
 
@@ -64,3 +64,14 @@ def search_files(db: Session, query: str):
         .where(models.File.file_name.ilike(f"%{query}%"))
     )
     return db.execute(stmt).all()
+
+def remove_inactive_peers(db: Session, threshold_seconds: int = 60):
+    """Delete the ghost entries in table"""
+
+    cutoff_time = datetime.now(timezone.utc) - timedelta(seconds=threshold_seconds)
+
+    stmt = delete(models.ActivePeer).where(models.ActivePeer.last_heartbeat < cutoff_time)
+
+    result = db.exexute(stmt)
+    db.commit()
+    return result.rowcount

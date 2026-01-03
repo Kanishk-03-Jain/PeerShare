@@ -3,7 +3,7 @@ import requests
 import time
 import sys
 
-from . import utils, config, p2p_server
+from . import tunnel_manager, utils, config, p2p_server
 
 class ShareNotesClient:
     def __init__(self, username, port=config.DEFAULT_PORT, folder=config.DEFAULT_FOLDER):
@@ -49,11 +49,7 @@ class ShareNotesClient:
             print("No files to share")
             return
         
-        ngrok_url = os.getenv("MY_PUBLIC_URL")
-
-        if ngrok_url:
-            ngrok_url = ngrok_url.rstrip("/")
-            print(f"Public Access Enabled: {ngrok_url}")
+        ngrok_url = tunnel_manager.start_ngrok_tunnel(self.port, auth_token=os.getenv("NGROK_AUTHTOKEN"))
         
         payload = {
             "user_id": self.user_id,
