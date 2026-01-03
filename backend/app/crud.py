@@ -72,6 +72,6 @@ def remove_inactive_peers(db: Session, threshold_seconds: int = 60):
 
     stmt = delete(models.ActivePeer).where(models.ActivePeer.last_heartbeat < cutoff_time)
 
-    result = db.exexute(stmt)
+    result = db.execute(stmt)
     db.commit()
     return result.rowcount
