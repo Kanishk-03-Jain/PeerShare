@@ -48,6 +48,7 @@ def download_file_strategy(peer_data: dict, filename: str, filesize: int, destin
     local_url = f"http://{peer_data['ip_address']}:{peer_data['port']}"
     candidates.append((local_url, "Local LAN"))
 
+    print(peer_data)
     if peer_data.get('public_url'):
         public_url = peer_data['public_url']
         if not public_url.startswith("http"):

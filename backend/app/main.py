@@ -91,6 +91,7 @@ async def search_files(
             "user_id": peer_obj.user_id,
             "ip_address": peer_obj.ip_address,
             "port": peer_obj.port,
+            "public_url": peer_obj.public_url,
             "username": user_obj.username,
             "last_heartbeat": peer_obj.last_heartbeat 
         })
