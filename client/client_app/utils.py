@@ -1,11 +1,14 @@
 import os
 import hashlib
 import socket
+import logging
+from typing import List, Dict, Any
 
 from .config import CHUNK_SIZE
 
+logger = logging.getLogger(__name__)
 
-def get_file_hash(filepath: str):
+def get_file_hash(filepath: str) -> str:
     """Calculate SHA-256 hash of a file"""
     hasher = hashlib.sha256()
     with open(filepath, "rb") as file:
@@ -14,7 +17,7 @@ def get_file_hash(filepath: str):
     return hasher.hexdigest()
 
 
-def get_local_ip():
+def get_local_ip() -> str:
     """Finds the internal WiFi IP address."""
 
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -29,22 +32,26 @@ def get_local_ip():
     return IP
 
 
-def scan_folder(folder_path):
+def scan_folder(folder_path: str) -> List[Dict[str, Any]]:
     """Scans the folder and returns a list of file dictionaries."""
     files_payload = []
     if not os.path.exists(folder_path):
-        print("folder does not exist")
+        logger.warning(f"Shared folder does not exist: {folder_path}")
         return []
 
     for root, dirs, files in os.walk(folder_path):
         for filename in files:
             filepath = os.path.join(root, filename)
 
-            files_payload.append(
-                {
-                    "file_hash": get_file_hash(filepath),
-                    "file_name": filename,
-                    "file_size": os.path.getsize(filepath),
-                }
-            )
+            try:
+                files_payload.append(
+                    {
+                        "file_hash": get_file_hash(filepath),
+                        "file_name": filename,
+                        "file_size": os.path.getsize(filepath),
+                    }
+                )
+            except Exception as e:
+                logger.warning(f"Skipping file {filename}: {e}")
+                
     return files_payload
