@@ -5,25 +5,26 @@ import threading
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 
+
 class PeerRequestHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         # Parse the URL /download?name=test.txt
         parsed_url = urlparse(self.path)
         if parsed_url.path != "/download":
             return self.send_error(404, "Endpoint not found")
-        
+
         params = parse_qs(parsed_url.query)
-        filename = params.get('name', [None])[0]
+        filename = params.get("name", [None])[0]
 
         if not filename:
             return self.send_error(400, "Invalid filename")
-        
+
         # Security: Sanitize filename to prevent path traversal
         # Remove any path components (../, /, \)
         filename = os.path.basename(filename)
-        if '..' in filename or '/' in filename or '\\' in filename:
+        if ".." in filename or "/" in filename or "\\" in filename:
             return self.send_error(400, "Invalid filename")
-            
+
         # Server instance is avalaible here
         try:
             folder = self.server.shared_folder
@@ -31,11 +32,11 @@ class PeerRequestHandler(http.server.SimpleHTTPRequestHandler):
             # Fallback if it wasn't set correctly (prevents the crash you just saw)
             print("Error: shared_folder not set on server instance")
             return self.send_error(500, "Server Configuration Error")
-        
+
         # Resolve paths to prevent path traversal
         shared_folder = Path(folder).resolve()
         file_path = (shared_folder / filename).resolve()
-        
+
         # Security check: ensure file is within shared folder
         if not str(file_path).startswith(str(shared_folder)):
             return self.send_error(403, "Access denied")
@@ -45,18 +46,19 @@ class PeerRequestHandler(http.server.SimpleHTTPRequestHandler):
         else:
             self.send_error(404, "File not found")
 
-
     def _send_file(self, file_path: str, filename: str):
-        
+
         try:
             self.send_response(200)
             self.send_header("Content-type", "application/octet-stream")
-            self.send_header("Content-Disposition", f'attachment; filename="{filename}"')
+            self.send_header(
+                "Content-Disposition", f'attachment; filename="{filename}"'
+            )
             file_size = os.path.getsize(file_path)
             self.send_header("Content-Length", str(file_size))
             self.end_headers()
 
-            with open(file_path, 'rb') as f:
+            with open(file_path, "rb") as f:
                 while chunk := f.read(4096):
                     self.wfile.write(chunk)
             print(f"Served: {filename} -> {self.client_address[0]}")
@@ -81,9 +83,8 @@ class P2PServer:
         # Attach the custom shared folder the the server instance
         self.httpd.shared_folder = self.shared_folder
 
-        self.server_thread = threading.Thread(target=self.httpd.serve_forever, daemon=True)
+        self.server_thread = threading.Thread(
+            target=self.httpd.serve_forever, daemon=True
+        )
         self.server_thread.start()
         print(f"File Server running on port {self.port}")
-    
-
-    

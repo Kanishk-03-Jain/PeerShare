@@ -1,18 +1,19 @@
 from . import downloader, config
 
+
 def run_cli():
     print("\n--- ShareNotes Downloader ---")
     query = input("Enter filename to search: ").strip()
     if not query:
         print("Empty query.")
         return
-    
+
     results = downloader.search_tracker(query)
 
     if not results:
         print("No files found.")
         return
-    
+
     # Display Results
     print(f"\nFound {len(results)} files:")
     for i, file in enumerate(results):
@@ -28,15 +29,15 @@ def run_cli():
     except (ValueError, IndexError):
         print("Invalid selection.")
         return
-    
-    peer = selected_file['peers'][0]
+
+    peer = selected_file["peers"][0]
 
     print(f"\nConnecting to Peer '{peer['username']}' at {peer['ip_address']}...")
 
     # 5. Trigger Download
     downloader.download_file_strategy(
         peer_data=peer,
-        filename=selected_file['file_name'],
-        filesize=selected_file['file_size'],
-        destination=str(config.DOWNLOAD_FOLDER)
+        filename=selected_file["file_name"],
+        filesize=selected_file["file_size"],
+        destination=str(config.DOWNLOAD_FOLDER),
     )

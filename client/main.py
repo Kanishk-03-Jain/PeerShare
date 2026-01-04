@@ -5,6 +5,7 @@ from client_app.config import DEFAULT_PORT, DEFAULT_FOLDER, TRACKER_SERVER_URL
 import getpass
 import requests
 
+
 def signup():
     """Register a new user"""
     print("Signing up...")
@@ -17,20 +18,16 @@ def signup():
     if not password:
         print("Error: Password cannot be empty.")
         sys.exit(1)
-    
+
     try:
         url = f"{TRACKER_SERVER_URL}/signup"
-        payload = {
-            "username": username,
-            "email": email,
-            "password": password
-        }
+        payload = {"username": username, "email": email, "password": password}
         resp = requests.post(url, json=payload)
 
         if resp.status_code == 400:
             print("Error: Username already exists")
             sys.exit(1)
-        
+
         resp.raise_for_status()
         data = resp.json()
         print(f"Successfully signed up as {data['user']['username']}")
@@ -45,7 +42,7 @@ def signup():
     except Exception as e:
         print(f"Signup failed: {e}")
         sys.exit(1)
-    
+
 
 def main():
     newuser = input("want to register (y/r)")
@@ -55,6 +52,7 @@ def main():
     password = input("enter password: ")
     client = ShareNotesClient(username=username, password=password)
     client.run_forever()
+
 
 if __name__ == "__main__":
     main()

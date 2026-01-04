@@ -6,8 +6,15 @@ import getpass
 
 from . import tunnel_manager, utils, config, p2p_server
 
+
 class ShareNotesClient:
-    def __init__(self, username, password=None, port=config.DEFAULT_PORT, folder=config.DEFAULT_FOLDER):
+    def __init__(
+        self,
+        username,
+        password=None,
+        port=config.DEFAULT_PORT,
+        folder=config.DEFAULT_FOLDER,
+    ):
         self.user_id = None
         self.username = username
         self.password = password
@@ -32,15 +39,11 @@ class ShareNotesClient:
 
         if not self.password:
             self.password = getpass.getpass("Enter password: ")
-        
 
         try:
             url = f"{config.TRACKER_SERVER_URL}/login"
-            
-            payload = {
-                "username": self.username,
-                "password": self.password
-            }
+
+            payload = {"username": self.username, "password": self.password}
 
             resp = requests.post(url, json=payload)
 
@@ -51,12 +54,11 @@ class ShareNotesClient:
 
             data = resp.json()
 
-            self.access_token = data['access_token']
-            self.user_id = data['user']['user_id']
+            self.access_token = data["access_token"]
+            self.user_id = data["user"]["user_id"]
             print(f"Successfully logged in as {data['user']['username']}")
         except requests.exceptions.RequestException as e:
             print(f"Login failed: {e}")
-
 
     def initialize(self):
         """Setup folder and start server"""
@@ -64,7 +66,7 @@ class ShareNotesClient:
             os.makedirs(self.folder)
             print(f"Created shared folder at: {self.folder}")
         self.server.start()
-    
+
     def announce_files(self):
         """Scans files and announce them to tracker server"""
         print(f"Scanning folder {self.folder}...")
@@ -73,15 +75,17 @@ class ShareNotesClient:
         if not files:
             print("No files to share")
             return
-        
-        ngrok_url = tunnel_manager.start_ngrok_tunnel(self.port, auth_token=os.getenv("NGROK_AUTHTOKEN"))
-        
+
+        ngrok_url = tunnel_manager.start_ngrok_tunnel(
+            self.port, auth_token=os.getenv("NGROK_AUTHTOKEN")
+        )
+
         payload = {
             "user_id": self.user_id,
             "port": self.port,
             "ip_address": self.local_ip,
             "public_url": ngrok_url,
-            "files": files
+            "files": files,
         }
 
         try:
@@ -99,7 +103,7 @@ class ShareNotesClient:
             requests.post(url, headers=self._get_headers())
         except Exception as e:
             print("Ping failed (Tracker might be down)")
-    
+
     def run_forever(self):
         """Main Loop"""
         self.login()
