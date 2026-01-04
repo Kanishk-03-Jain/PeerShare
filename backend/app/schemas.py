@@ -9,10 +9,12 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
+
 
 class TokenData(BaseModel):
     username: str | None = None
@@ -25,25 +27,26 @@ class User(BaseModel):
     disabled: bool | None = None
 
 
-class UserInDB(User):
-    hashed_password: str
-
 class UserSignup(BaseModel):
     """Schema for user registration"""
+
     username: str = Field(..., min_length=3, max_length=50)
     password: str = Field(..., min_length=8)
     email: Optional[str] = Field(None, max_length=100)
-    
-    @field_validator('username')
+
+    @field_validator("username")
     def validate_username(cls, v: str):
-        if not v.isalnum() and '_' not in v:
+        if not v.isalnum() and "_" not in v:
             raise ValueError("Username must be alphanumeric or contain underscores")
         return v.lower()
 
+
 class UserLogin(BaseModel):
     """Schema for user login"""
+
     username: str
     password: str
+
 
 class UserCreate(BaseModel):
     username: str
@@ -55,6 +58,7 @@ class UserResponse(BaseModel):
     user_id: int
     username: str
     email: Optional[str] = None
+
     class Config:
         from_attributes = True
 

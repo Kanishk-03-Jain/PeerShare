@@ -17,31 +17,28 @@ load_dotenv()
 async def root():
     return {"message": "Hello! This is root for share-notes server"}
 
-@app.post("/signup", response_model=schemas.TokenResponse, status_code=status.HTTP_201_CREATED)
-async def signup(
-    user_data: schemas.UserSignup,
-    db: Session = Depends(database.get_db)
-):
-    print(user_data)
+
+@app.post(
+    "/signup", response_model=schemas.TokenResponse, status_code=status.HTTP_201_CREATED
+)
+async def signup(user_data: schemas.UserSignup, db: Session = Depends(database.get_db)):
     existing_user = crud.get_user_by_username(db, user_data.username)
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already registered"
+            detail="Username already registered",
         )
     if user_data.email:
         existing_email = crud.get_user_by_email(db, email=user_data.email)
         if existing_email:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email already registered"
+                detail="Email already registered",
             )
-    
+
     password_hash = auth.get_password_hash(user_data.password)
     user_create = schemas.UserCreate(
-        username=user_data.username,
-        password_hash=password_hash,
-        email=user_data.email
+        username=user_data.username, password_hash=password_hash, email=user_data.email
     )
 
     user = crud.create_user(db, user_create)
@@ -52,18 +49,13 @@ async def signup(
         "access_token": access_token,
         "token_type": "bearer",
         "user": schemas.UserResponse(
-            user_id=user.user_id,
-            username=user.username,
-            email=user.email
-        )
+            user_id=user.user_id, username=user.username, email=user.email
+        ),
     }
 
 
 @app.post("/login", response_model=schemas.TokenResponse)
-async def login(
-    credentials: schemas.UserLogin, 
-    db: Session = Depends(database.get_db)
-):
+async def login(credentials: schemas.UserLogin, db: Session = Depends(database.get_db)):
     """Login and get access token"""
     user = crud.get_user_by_username(db, credentials.username)
     if not user:
@@ -79,17 +71,15 @@ async def login(
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     access_token = auth.create_access_token({"sub": credentials.username})
-    
+
     return {
         "access_token": access_token,
         "token_type": "bearer",
         "user": schemas.UserResponse(
-            user_id=user.user_id,
-            username=user.username,
-            email=user.email
-        )
+            user_id=user.user_id, username=user.username, email=user.email
+        ),
     }
 
 
@@ -118,8 +108,8 @@ async def announce_files(
 
 @app.post("/ping")
 async def peer_ping(
-    current_user: models.User = Depends(auth.get_current_active_user), 
-    db: Session = Depends(database.get_db)
+    current_user: models.User = Depends(auth.get_current_active_user),
+    db: Session = Depends(database.get_db),
 ):
     """used to know if the user is active or not"""
 

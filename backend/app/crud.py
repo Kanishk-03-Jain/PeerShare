@@ -6,22 +6,21 @@ from datetime import datetime, timezone, timedelta
 from . import models, schemas
 
 
-def get_user_by_username(db: Session, username: str):
+def get_user_by_username(db: Session, username: str) -> models.User:
     return db.scalar(select(models.User).where(models.User.username == username))
 
 
-def get_user_by_email(db: Session, email: str):
+def get_user_by_email(db: Session, email: str) -> models.User:
     return db.scalar(select(models.User).where(models.User.email == email))
 
 
-def get_user(db: Session, user_id: int):
+def get_user(db: Session, user_id: int) -> models.User:
     return db.scalar(select(models.User).where(models.User.user_id == user_id))
+
 
 def create_user(db: Session, user: schemas.UserCreate) -> models.User:
     db_user = models.User(
-        username=user.username,
-        password_hash=user.password_hash,
-        email=user.email
+        username=user.username, password_hash=user.password_hash, email=user.email
     )
 
     db.add(db_user)
@@ -32,7 +31,7 @@ def create_user(db: Session, user: schemas.UserCreate) -> models.User:
 
 def upsert_file_announcement(
     db: Session, payload: schemas.FileAnnounce, client_ip: str
-):
+) -> int:
     """Handles adding files and updating active peer status"""
     for file in payload.files:
         # insert file if not exits
@@ -73,7 +72,8 @@ def upsert_file_announcement(
     return len(payload.files)
 
 
-def update_last_heartbeat(db: Session, user_id: int):
+def update_last_heartbeat(db: Session, user_id: int) -> int:
+    """Update the last_heartbeat of given peer"""
     stmt = (
         update(models.ActivePeer)
         .where(models.ActivePeer.user_id == user_id)
@@ -85,6 +85,7 @@ def update_last_heartbeat(db: Session, user_id: int):
 
 
 def search_files(db: Session, query: str):
+    """Searches for files on other active peers"""
     stmt = (
         select(models.File, models.ActivePeer, models.User)
         .join(models.ActivePeer, models.File.file_hash == models.ActivePeer.file_hash)
@@ -94,7 +95,7 @@ def search_files(db: Session, query: str):
     return db.execute(stmt).all()
 
 
-def remove_inactive_peers(db: Session, threshold_seconds: int = 60):
+def remove_inactive_peers(db: Session, threshold_seconds: int = 60) -> int:
     """Delete the ghost entries in table"""
 
     cutoff_time = datetime.now(timezone.utc) - timedelta(seconds=threshold_seconds)
