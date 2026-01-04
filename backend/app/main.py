@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Request, Depends, HTTPException, status
+from contextlib import asynccontextmanager
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
 from typing import List, Tuple
@@ -6,10 +7,48 @@ from typing import Annotated
 from datetime import timedelta
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+import logging
 
 from . import database, models, schemas, crud, auth
 
-app = FastAPI()
+import asyncio
+import httpx
+from .database import SessionLocal
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
+
+async def cleanup_task():
+    """Background task to remove inactive peers periodically"""
+    while True:
+        try:
+            db = SessionLocal()
+            crud.remove_inactive_peers(db)
+            db.close()
+        except Exception as e:
+            logger.error(f"Error during cleanup: {e}")
+        await asyncio.sleep(60)  # Run every 60 seconds
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Ensure all tables exist
+    try:
+        database.Base.metadata.create_all(bind=database.engine)
+        logger.info("Database tables verified/created successfully.")
+    except Exception as e:
+        logger.error(f"Database initialization failed: {e}")
+
+    # Start background task
+    task = asyncio.create_task(cleanup_task())
+    yield
+    # Cancel background task on shutdown
+    task.cancel()
+
+app = FastAPI(lifespan=lifespan)
 load_dotenv()
 
 
@@ -87,18 +126,21 @@ async def login(credentials: schemas.UserLogin, db: Session = Depends(database.g
 async def announce_files(
     payload: schemas.FileAnnounce,  # handles JSON body
     request: Request,  # gets IP address of the client
+    current_user: models.User = Depends(auth.get_current_active_user),
     db: Session = Depends(database.get_db),
 ):
     """Clients announces the files they have to the server"""
 
-    # Validate if the user exits
-    user = crud.get_user(db, payload.user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+    # Authorization Check
+    if payload.user_id != current_user.user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, 
+            detail="Not authorized to announce for this user"
+        )
 
     # Determining the IP of the client
     client_ip = payload.ip_address if payload.ip_address else request.client.host
-    print(f"User {payload.user_id} is online at {client_ip}:{payload.port}")
+    logger.info(f"User {payload.user_id} is online at {client_ip}:{payload.port}")
 
     # announce the files to the server and update db
     count = crud.upsert_file_announcement(db, payload, client_ip)
@@ -128,9 +170,6 @@ async def peer_ping(
 @app.get("/search", response_model=List[schemas.SearchResult])
 async def search_files(q: str, db: Session = Depends(database.get_db)):
     """search for the files"""
-
-    # Remove ghost entries in db
-    crud.remove_inactive_peers(db)
 
     # Search database for the required files
     results: List[Tuple[models.File, models.ActivePeer, models.User]] = (
