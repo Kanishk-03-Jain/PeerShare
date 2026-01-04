@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Union
 from datetime import datetime, timedelta, timezone
 import os
 import jwt
@@ -32,7 +32,7 @@ def authenticate_user(
     username: str,
     password: str,
     db: Session = Depends(database.get_db),
-) -> models.User | False:
+) -> Union[models.User, bool]:
     user = crud.get_user_by_username(db, username)
     if not user:
         return False
