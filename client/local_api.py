@@ -1,13 +1,12 @@
-from fastapi import FastAPI, BackgroundTasks, HTTPException, status
+from fastapi import FastAPI, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import requests
-import os
 import logging
 import threading
 import time
-from typing import Optional, List, Dict
+from typing import Optional
 
-from client_app.core import ShareNotesClient, ShareNotesError, AuthenticationError
+from client_app.core import ShareNotesClient, AuthenticationError
 from client_app import downloader, config, schemas
 
 logging.basicConfig(level=logging.INFO)
@@ -125,6 +124,11 @@ async def logout():
         return {"status": "ignored", "message": "Not logged in"}
 
     stop_event.set()
+    
+    # Gracefully stop the P2P server to release the port
+    if client_service and client_service.server:
+        client_service.server.stop()
+
     # We don't join/wait here to avoid blocking api, but thread will die soon.
     
     client_service = None
@@ -146,6 +150,43 @@ async def get_status():
         "local_ip": client_service.local_ip
     }
 
+# --- Configuration Endpoints ---
+
+@app.get("/api/config")
+async def get_config():
+    """Return current configuration, masking sensitive data if needed"""
+    return {
+        "port": config.settings.PORT,
+        "shared_folder": config.settings.SHARED_FOLDER,
+        "download_folder": config.settings.DOWNLOAD_FOLDER,
+        "ngrok_configured": bool(config.settings.NGROK_TOKEN)
+    }
+
+@app.post("/api/config")
+async def update_config(payload: dict):
+    """
+    Update configuration settings. 
+    Payload can contain: port, shared_folder, download_folder, ngrok_token
+    """
+    allowed_keys = ["port", "shared_folder", "download_folder", "ngrok_token"]
+    
+    try:
+        updated = False
+        for key in allowed_keys:
+            if key in payload:
+                config.settings.set(key, payload[key])
+                updated = True
+        
+        if updated:
+            return {"status": "success", "message": "Configuration updated"}
+        else:
+            return {"status": "ignored", "message": "No valid keys found"}
+
+    except Exception as e:
+         logger.error(f"Failed to update config: {e}")
+         raise HTTPException(status_code=500, detail=f"Failed to update config: {e}")
+
+
 # --- File Management ----
 
 
@@ -164,7 +205,7 @@ async def trigger_download(file_info: dict, background_tasks: BackgroundTasks):
         background_tasks.add_task(
             downloader.download_file_strategy,
             file_data=search_result,
-            destination=str(config.DOWNLOAD_FOLDER)
+            destination=str(config.settings.DOWNLOAD_FOLDER) # Use config setting
         )
         return {"status": "Download started", "file": search_result.file_name}
     except Exception as e:

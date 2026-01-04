@@ -24,8 +24,8 @@ class ShareNotesClient:
         self,
         username: str,
         password: str = None,
-        port: int = config.DEFAULT_PORT,
-        folder: str = config.DEFAULT_FOLDER,
+        port: int = config.settings.PORT,
+        folder: str = config.settings.SHARED_FOLDER,
     ):
         self.user_id: Optional[int] = None
         self.username = username
@@ -96,7 +96,7 @@ class ShareNotesClient:
         valid_files = [schemas.FileBase(**f) for f in files_data]
         
         ngrok_url = tunnel_manager.start_ngrok_tunnel(
-            self.port, auth_token=os.getenv("NGROK_AUTHTOKEN")
+            self.port, auth_token=config.settings.NGROK_TOKEN
         )
 
         announce_payload = schemas.FileAnnounce(

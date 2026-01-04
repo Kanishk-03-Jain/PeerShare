@@ -88,3 +88,14 @@ class P2PServer:
         )
         self.server_thread.start()
         print(f"File Server running on port {self.port}")
+
+    def stop(self):
+        """Stops the server and releases the port"""
+        if self.httpd:
+            self.httpd.shutdown()
+            self.httpd.server_close()
+            self.httpd = None
+            print("File Server stopped")
+        if self.server_thread:
+            self.server_thread.join()
+            self.server_thread = None
