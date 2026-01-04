@@ -3,3 +3,5 @@ sqlalchemy
 python-dotenv
 uvicorn
 psycopg2
+pyjwt
+pwdlib[argon2]

@@ -5,41 +5,68 @@ from datetime import datetime, timezone, timedelta
 
 from . import models, schemas
 
+
 def get_user_by_username(db: Session, username: str):
     return db.scalar(select(models.User).where(models.User.username == username))
+
+
+def get_user_by_email(db: Session, email: str):
+    return db.scalar(select(models.User).where(models.User.email == email))
+
 
 def get_user(db: Session, user_id: int):
     return db.scalar(select(models.User).where(models.User.user_id == user_id))
 
-def upsert_file_announcement(db: Session, payload: schemas.FileAnnounce, client_ip: str):
+def create_user(db: Session, user: schemas.UserCreate) -> models.User:
+    db_user = models.User(
+        username=user.username,
+        password_hash=user.password_hash,
+        email=user.email
+    )
+
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
+
+def upsert_file_announcement(
+    db: Session, payload: schemas.FileAnnounce, client_ip: str
+):
     """Handles adding files and updating active peer status"""
     for file in payload.files:
         # insert file if not exits
-        file_stmt = insert(models.File).values(
-            file_hash=file.file_hash,
-            file_name=file.file_name,
-            file_size=file.file_size
-        ).on_conflict_do_nothing(
-            index_elements=['file_hash']
+        file_stmt = (
+            insert(models.File)
+            .values(
+                file_hash=file.file_hash,
+                file_name=file.file_name,
+                file_size=file.file_size,
+            )
+            .on_conflict_do_nothing(index_elements=["file_hash"])
         )
         db.execute(file_stmt)
 
         # upsert ActivePeers
-        peer_stmt = insert(models.ActivePeer).values(
-            user_id=payload.user_id,
-            file_hash=file.file_hash,
-            ip_address=client_ip,
-            port=payload.port,
-            public_url=payload.public_url,
-            last_heartbeat=datetime.now(timezone.utc)
-        ).on_conflict_do_update(
-            constraint='active_peers_user_id_file_hash_key',
-            set_={ 
+        peer_stmt = (
+            insert(models.ActivePeer)
+            .values(
+                user_id=payload.user_id,
+                file_hash=file.file_hash,
+                ip_address=client_ip,
+                port=payload.port,
+                public_url=payload.public_url,
+                last_heartbeat=datetime.now(timezone.utc),
+            )
+            .on_conflict_do_update(
+                constraint="active_peers_user_id_file_hash_key",
+                set_={
                     "last_heartbeat": datetime.now(timezone.utc),
                     "ip_address": client_ip,
                     "port": payload.port,
-                    "public_url": payload.public_url
-                }
+                    "public_url": payload.public_url,
+                },
+            )
         )
         db.execute(peer_stmt)
     db.commit()
@@ -56,6 +83,7 @@ def update_last_heartbeat(db: Session, user_id: int):
     db.commit()
     return result.rowcount
 
+
 def search_files(db: Session, query: str):
     stmt = (
         select(models.File, models.ActivePeer, models.User)
@@ -65,12 +93,15 @@ def search_files(db: Session, query: str):
     )
     return db.execute(stmt).all()
 
+
 def remove_inactive_peers(db: Session, threshold_seconds: int = 60):
     """Delete the ghost entries in table"""
 
     cutoff_time = datetime.now(timezone.utc) - timedelta(seconds=threshold_seconds)
 
-    stmt = delete(models.ActivePeer).where(models.ActivePeer.last_heartbeat < cutoff_time)
+    stmt = delete(models.ActivePeer).where(
+        models.ActivePeer.last_heartbeat < cutoff_time
+    )
 
     result = db.execute(stmt)
     db.commit()

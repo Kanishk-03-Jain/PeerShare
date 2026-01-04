@@ -2,6 +2,7 @@ import os
 import http.server
 import socketserver
 import threading
+from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 
 class PeerRequestHandler(http.server.SimpleHTTPRequestHandler):
@@ -16,6 +17,12 @@ class PeerRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         if not filename:
             return self.send_error(400, "Invalid filename")
+        
+        # Security: Sanitize filename to prevent path traversal
+        # Remove any path components (../, /, \)
+        filename = os.path.basename(filename)
+        if '..' in filename or '/' in filename or '\\' in filename:
+            return self.send_error(400, "Invalid filename")
             
         # Server instance is avalaible here
         try:
@@ -25,7 +32,13 @@ class PeerRequestHandler(http.server.SimpleHTTPRequestHandler):
             print("Error: shared_folder not set on server instance")
             return self.send_error(500, "Server Configuration Error")
         
-        file_path = os.path.join(folder, filename)
+        # Resolve paths to prevent path traversal
+        shared_folder = Path(folder).resolve()
+        file_path = (shared_folder / filename).resolve()
+        
+        # Security check: ensure file is within shared folder
+        if not str(file_path).startswith(str(shared_folder)):
+            return self.send_error(403, "Access denied")
 
         if os.path.exists(file_path) and os.path.isfile(file_path):
             self._send_file(file_path, filename)
@@ -48,7 +61,7 @@ class PeerRequestHandler(http.server.SimpleHTTPRequestHandler):
                     self.wfile.write(chunk)
             print(f"Served: {filename} -> {self.client_address[0]}")
         except Exception as e:
-            print("Upload error: {e}")
+            print(f"Upload error: {e}")
 
 
 class P2PServer:

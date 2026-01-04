@@ -17,6 +17,7 @@ CREATE TABLE active_peers (
     file_hash CHAR(64) NOT NULL,
     ip_address VARCHAR(45) NOT NULL, -- Supports IPv4 and IPv6
     port INT NOT NULL,
+    public_url TEXT,
     last_heartbeat TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
     -- Constraints

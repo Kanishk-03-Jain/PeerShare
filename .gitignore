@@ -4,3 +4,4 @@ venv
 .DS_Store
 client/shared_folder/*
 client/downloads/*
+SECURITY_REVIEW.md
