@@ -5,6 +5,20 @@ import re
 
 # --- Shared Models (Mirroring Backend) ---
 
+class UserSignup(BaseModel):
+    """Schema for user registration"""
+
+    username: str = Field(..., min_length=3, max_length=50)
+    password: str = Field(..., min_length=8)
+    email: Optional[str] = Field(None, max_length=100)
+
+    @field_validator("username")
+    def validate_username(cls, v: str):
+        if not v.isalnum() and "_" not in v:
+            raise ValueError("Username must be alphanumeric or contain underscores")
+        return v.lower()
+
+
 class User(BaseModel):
     user_id: int
     username: str

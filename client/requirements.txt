@@ -2,3 +2,5 @@ requests
 tqdm
 pyngrok
 pydantic
+fastapi
+uvicorn
