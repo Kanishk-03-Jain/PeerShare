@@ -26,9 +26,11 @@ client_service: Optional[ShareNotesClient] = None
 client_thread: Optional[threading.Thread] = None
 stop_event = threading.Event()
 
+
 @app.get("/")
 async def root():
     return {"message": "This is the client server"}
+
 
 @app.post("/api/signup")
 async def signup(payload: dict):
@@ -37,13 +39,15 @@ async def signup(payload: dict):
         resp = requests.post(url, json=payload)
 
         if resp.status_code == 400:
-            raise HTTPException(status_code=400, detail="Username or email already exists")
+            raise HTTPException(
+                status_code=400, detail="Username or email already exists"
+            )
 
         resp.raise_for_status()
         data = resp.json()
         logger.info(f"Successfully signed up as {data.get('user', {}).get('username')}")
         return data
-    
+
     except requests.exceptions.HTTPError as e:
         if e.response.status_code == 422:
             detail = e.response.json()
@@ -62,10 +66,16 @@ async def login(payload: dict):
     global client_service, client_thread, stop_event
 
     if client_service is not None:
-        return {"message": "Already logged in", "user": {"username": client_service.username, "user_id": client_service.user_id}}
-    
-    username = payload.get('username')
-    password = payload.get('password')
+        return {
+            "message": "Already logged in",
+            "user": {
+                "username": client_service.username,
+                "user_id": client_service.user_id,
+            },
+        }
+
+    username = payload.get("username")
+    password = payload.get("password")
 
     if not username or not password:
         raise HTTPException(status_code=400, detail="Username and password required")
@@ -94,19 +104,20 @@ async def login(payload: dict):
                         client_service.send_heartbeat()
                 except Exception as e:
                     logger.warning(f"Heartbeat failed: {e}")
-                
+
                 # Sleep in small chunks to allow quick shutdown
-                for _ in range(30): 
-                    if stop_event.is_set(): break
+                for _ in range(30):
+                    if stop_event.is_set():
+                        break
                     time.sleep(1)
-            
+
             logger.info("Background P2P service stopped.")
 
         client_thread = threading.Thread(target=run_client_background, daemon=True)
         client_thread.start()
 
         return {"status": "success", "user": user_data}
-    
+
     except AuthenticationError as e:
         client_service = None
         raise HTTPException(status_code=401, detail=str(e))
@@ -114,23 +125,23 @@ async def login(payload: dict):
         client_service = None
         logger.error(f"Login failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-    
+
 
 @app.post("/api/auth/logout")
 async def logout():
     global client_service, stop_event, client_thread
-    
+
     if client_service is None:
         return {"status": "ignored", "message": "Not logged in"}
 
     stop_event.set()
-    
+
     # Gracefully stop the P2P server to release the port
     if client_service and client_service.server:
         client_service.server.stop()
 
     # We don't join/wait here to avoid blocking api, but thread will die soon.
-    
+
     client_service = None
     return {"status": "success", "message": "Logged out and server stopped"}
 
@@ -140,17 +151,19 @@ async def get_status():
     """Returns the current status of the client."""
     if client_service is None:
         return {"online": False, "status": "Offline"}
-    
+
     return {
         "online": True,
         "username": client_service.username,
         "user_id": client_service.user_id,
         "port": client_service.port,
         "shared_folder": client_service.folder,
-        "local_ip": client_service.local_ip
+        "local_ip": client_service.local_ip,
     }
 
+
 # --- Configuration Endpoints ---
+
 
 @app.get("/api/config")
 async def get_config():
@@ -159,32 +172,33 @@ async def get_config():
         "port": config.settings.PORT,
         "shared_folder": config.settings.SHARED_FOLDER,
         "download_folder": config.settings.DOWNLOAD_FOLDER,
-        "ngrok_configured": bool(config.settings.NGROK_TOKEN)
+        "ngrok_configured": bool(config.settings.NGROK_TOKEN),
     }
+
 
 @app.post("/api/config")
 async def update_config(payload: dict):
     """
-    Update configuration settings. 
+    Update configuration settings.
     Payload can contain: port, shared_folder, download_folder, ngrok_token
     """
     allowed_keys = ["port", "shared_folder", "download_folder", "ngrok_token"]
-    
+
     try:
         updated = False
         for key in allowed_keys:
             if key in payload:
                 config.settings.set(key, payload[key])
                 updated = True
-        
+
         if updated:
             return {"status": "success", "message": "Configuration updated"}
         else:
             return {"status": "ignored", "message": "No valid keys found"}
 
     except Exception as e:
-         logger.error(f"Failed to update config: {e}")
-         raise HTTPException(status_code=500, detail=f"Failed to update config: {e}")
+        logger.error(f"Failed to update config: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to update config: {e}")
 
 
 # --- File Management ----
@@ -195,17 +209,18 @@ async def search(q: str):
     results = downloader.search_tracker(q)
     return results
 
+
 @app.post("/api/download")
 async def trigger_download(file_info: dict, background_tasks: BackgroundTasks):
     if client_service is None:
         raise HTTPException(status_code=401, detail="Not logged in")
-    
+
     try:
         search_result = schemas.SearchResult(**file_info)
         background_tasks.add_task(
             downloader.download_file_strategy,
             file_data=search_result,
-            destination=str(config.settings.DOWNLOAD_FOLDER) # Use config setting
+            destination=str(config.settings.DOWNLOAD_FOLDER),  # Use config setting
         )
         return {"status": "Download started", "file": search_result.file_name}
     except Exception as e:

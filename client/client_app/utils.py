@@ -8,6 +8,7 @@ from .config import CHUNK_SIZE
 
 logger = logging.getLogger(__name__)
 
+
 def get_file_hash(filepath: str) -> str:
     """Calculate SHA-256 hash of a file"""
     hasher = hashlib.sha256()
@@ -53,5 +54,5 @@ def scan_folder(folder_path: str) -> List[Dict[str, Any]]:
                 )
             except Exception as e:
                 logger.warning(f"Skipping file {filename}: {e}")
-                
+
     return files_payload

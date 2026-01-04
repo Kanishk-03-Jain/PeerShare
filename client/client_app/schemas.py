@@ -5,6 +5,7 @@ import re
 
 # --- Shared Models (Mirroring Backend) ---
 
+
 class UserSignup(BaseModel):
     """Schema for user registration"""
 
@@ -24,18 +25,21 @@ class User(BaseModel):
     username: str
     email: Optional[str] = None
 
+
 class UserResponse(BaseModel):
     user_id: int
     username: str
     email: Optional[str] = None
-    
+
     class Config:
         from_attributes = True
+
 
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str
     user: UserResponse
+
 
 class FileBase(BaseModel):
     file_hash: str = Field(..., min_length=64, max_length=64)
@@ -44,9 +48,10 @@ class FileBase(BaseModel):
 
     @field_validator("file_hash")
     def validate_hash(cls, v: str):
-         if not re.match(r"^[0-9a-fA-F]{64}$", v, re.IGNORECASE):
+        if not re.match(r"^[0-9a-fA-F]{64}$", v, re.IGNORECASE):
             raise ValueError("Invalid SHA-256 hash")
-         return v.lower()
+        return v.lower()
+
 
 class FileAnnounce(BaseModel):
     user_id: int
@@ -55,7 +60,9 @@ class FileAnnounce(BaseModel):
     public_url: Optional[str] = None
     files: List[FileBase]
 
+
 # --- Search Models ---
+
 
 class PeerInfo(BaseModel):
     user_id: int
@@ -64,6 +71,7 @@ class PeerInfo(BaseModel):
     public_url: Optional[str] = None
     username: str
     last_heartbeat: datetime
+
 
 class SearchResult(BaseModel):
     file_hash: str

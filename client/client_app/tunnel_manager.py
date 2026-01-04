@@ -4,6 +4,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 def start_ngrok_tunnel(port, auth_token=None):
     """
     Start ngrok tunnel on the given port

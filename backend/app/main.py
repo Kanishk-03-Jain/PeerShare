@@ -22,6 +22,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
 async def cleanup_task():
     """Background task to remove inactive peers periodically"""
     while True:
@@ -32,6 +33,7 @@ async def cleanup_task():
         except Exception as e:
             logger.error(f"Error during cleanup: {e}")
         await asyncio.sleep(60)  # Run every 60 seconds
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -47,6 +49,7 @@ async def lifespan(app: FastAPI):
     yield
     # Cancel background task on shutdown
     task.cancel()
+
 
 app = FastAPI(lifespan=lifespan)
 load_dotenv()
@@ -134,8 +137,8 @@ async def announce_files(
     # Authorization Check
     if payload.user_id != current_user.user_id:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, 
-            detail="Not authorized to announce for this user"
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to announce for this user",
         )
 
     # Determining the IP of the client
