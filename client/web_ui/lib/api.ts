@@ -9,7 +9,7 @@ export async function apiRequest(path:string, options?: RequestInit) {
     const config = {
         ...defaults,
         ...options,
-        header: {
+        headers: {
             ...defaults.headers,
             ...options?.headers
         }

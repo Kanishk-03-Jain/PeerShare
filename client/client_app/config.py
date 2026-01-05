@@ -76,8 +76,4 @@ class ConfigManager:
 # Singleton instance
 settings = ConfigManager()
 
-# Legacy exports for backwards compatibility
-DEFAULT_PORT = settings.PORT
-DEFAULT_FOLDER = settings.SHARED_FOLDER
-DOWNLOAD_FOLDER = settings.DOWNLOAD_FOLDER
 CHUNK_SIZE = 4096

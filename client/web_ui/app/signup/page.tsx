@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/card";
 
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/Input";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 const styles = {
@@ -30,7 +30,7 @@ const styles = {
     error: "text-sm text-red-500 font-medium",
 };
 
-export default function SigninForm() {
+export default function SignupForm() {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [email, setEmail] = useState("");
@@ -44,11 +44,11 @@ export default function SigninForm() {
         try {
             const data = await apiRequest("/api/signup", {
                 method: "POST",
-                body: JSON.stringify({ username, password }),
+                body: JSON.stringify({ username, password, email }),
             });
 
             if (data.status === "success" || data.ok) {
-                router.push("/");   // redirect to dashboard
+                router.push("/login");   // redirect to dashboard
             } else {
                 // Handle case where API returns 200 but logic says failure
                 setError(data.message || "Signup failed");
