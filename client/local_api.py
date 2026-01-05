@@ -35,7 +35,7 @@ async def root():
 @app.post("/api/signup")
 async def signup(payload: dict):
     try:
-        url = f"{config.TRACKER_SERVER_URL}/signup"
+        url = f"{config.settings.TRACKER_SERVER_URL}/signup"
         resp = requests.post(url, json=payload)
 
         if resp.status_code == 400:
@@ -171,6 +171,7 @@ async def get_config():
     token = config.settings.NGROK_TOKEN
     masked = token[:4] + "****" + token[-4:] if token else "token not set"
     return {
+        "tracker_server_url": config.settings.TRACKER_SERVER_URL,
         "port": config.settings.PORT,
         "shared_folder": config.settings.SHARED_FOLDER,
         "download_folder": config.settings.DOWNLOAD_FOLDER,
@@ -184,7 +185,7 @@ async def update_config(payload: dict):
     Update configuration settings.
     Payload can contain: port, shared_folder, download_folder, ngrok_authtoken
     """
-    allowed_keys = ["port", "shared_folder", "download_folder", "ngrok_authtoken"]
+    allowed_keys = ["tracker_server_url", "port", "shared_folder", "download_folder", "ngrok_authtoken"]
     try:
         updated = False
         for key in allowed_keys:

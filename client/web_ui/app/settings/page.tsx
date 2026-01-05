@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 
 export default function Settings() {
     const [config, setConfig] = useState({
+        trackerServerURL: "",
         port: "",
         shared_folder: "",
         download_folder: "",
@@ -16,6 +17,7 @@ export default function Settings() {
     useEffect(() => {
         apiRequest("/api/config").then((data) => {
             setConfig({
+                trackerServerURL: data.tracker_server_url,
                 port: String(data.port),
                 shared_folder: data.shared_folder,
                 download_folder: data.download_folder,
@@ -41,7 +43,15 @@ export default function Settings() {
       <h1 className="text-2xl font-bold">Settings</h1>
       
       <div className="space-y-2">
-        <Label>Port</Label>
+        <Label>Tracker Server URL</Label>
+        <Input 
+            value={config.trackerServerURL} 
+            onChange={(e) => setConfig({...config, trackerServerURL: e.target.value})} 
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Port on which peer will be connected</Label>
         <Input 
             value={config.port} 
             onChange={(e) => setConfig({...config, port: e.target.value})} 

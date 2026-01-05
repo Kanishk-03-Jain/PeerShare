@@ -60,7 +60,7 @@ class ShareNotesClient:
             raise AuthenticationError("Password is required")
 
         try:
-            url = f"{config.TRACKER_SERVER_URL}/login"
+            url = f"{config.settings.TRACKER_SERVER_URL}/login"
             payload = {"username": self.username, "password": self.password}
 
             resp = requests.post(url, json=payload)
@@ -115,7 +115,7 @@ class ShareNotesClient:
         )
 
         try:
-            url = f"{config.TRACKER_SERVER_URL}/announce"
+            url = f"{config.settings.TRACKER_SERVER_URL}/announce"
             resp = requests.post(
                 url,
                 json=announce_payload.model_dump(mode="json"),
@@ -134,7 +134,7 @@ class ShareNotesClient:
     def send_heartbeat(self):
         """Ping the server to keep the session alive"""
         try:
-            url = f"{config.TRACKER_SERVER_URL}/ping"
+            url = f"{config.settings.TRACKER_SERVER_URL}/ping"
             requests.post(url, headers=self._get_headers())
         except Exception as e:
             logger.warning(f"Ping failed (Tracker might be down): {e}")

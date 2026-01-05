@@ -13,6 +13,7 @@ CONFIG_FILE = APP_DIR / "config.json"
 
 # Defaults
 DEFAULT_CONFIG = {
+    "tracker_server_url": "https://share-notes-fh45.onrender.com",
     "port": 8001,
     "shared_folder": os.path.abspath("./shared_folder"),
     "download_folder": os.path.abspath("./downloads"),
@@ -55,6 +56,10 @@ class ConfigManager:
     def set(self, key: str, value: Any):
         self._config[key] = value
         self.save()
+
+    @property
+    def TRACKER_SERVER_URL(self) -> str:
+        return self.get("tracker_server_url")
 
     @property
     def PORT(self) -> int:

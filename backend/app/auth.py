@@ -12,8 +12,8 @@ from sqlalchemy.orm import Session
 from . import database, schemas, crud, models
 
 SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 2  # minutes
+ALGORITHM = os.getenv("ALGORITHM",  "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 60 * 2)  # minutes
 
 password_hash = PasswordHash.recommended()
 
