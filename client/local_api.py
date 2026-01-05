@@ -168,11 +168,13 @@ async def get_status():
 @app.get("/api/config")
 async def get_config():
     """Return current configuration, masking sensitive data if needed"""
+    token = config.settings.NGROK_TOKEN
+    masked = token[:4] + "****" + token[-4:] if token else "token not set"
     return {
         "port": config.settings.PORT,
         "shared_folder": config.settings.SHARED_FOLDER,
         "download_folder": config.settings.DOWNLOAD_FOLDER,
-        "ngrok_configured": bool(config.settings.NGROK_TOKEN),
+        "ngrok_configured": masked,
     }
 
 
@@ -180,10 +182,10 @@ async def get_config():
 async def update_config(payload: dict):
     """
     Update configuration settings.
-    Payload can contain: port, shared_folder, download_folder, ngrok_token
+    Payload can contain: port, shared_folder, download_folder, ngrok_authtoken
     """
-    allowed_keys = ["port", "shared_folder", "download_folder", "ngrok_token"]
-
+    allowed_keys = ["port", "shared_folder", "download_folder", "ngrok_authtoken"]
+    print(payload)
     try:
         updated = False
         for key in allowed_keys:

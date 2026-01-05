@@ -16,7 +16,7 @@ DEFAULT_CONFIG = {
     "port": 8001,
     "shared_folder": os.path.abspath("./shared_folder"),
     "download_folder": os.path.abspath("./downloads"),
-    "ngrok_token": "",
+    "ngrok_authtoken": "",
 }
 
 
@@ -70,7 +70,7 @@ class ConfigManager:
 
     @property
     def NGROK_TOKEN(self) -> str:
-        return self.get("ngrok_token")
+        return self.get("ngrok_authtoken")
 
 
 # Singleton instance
