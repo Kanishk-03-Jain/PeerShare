@@ -16,7 +16,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -185,7 +185,6 @@ async def update_config(payload: dict):
     Payload can contain: port, shared_folder, download_folder, ngrok_authtoken
     """
     allowed_keys = ["port", "shared_folder", "download_folder", "ngrok_authtoken"]
-    print(payload)
     try:
         updated = False
         for key in allowed_keys:

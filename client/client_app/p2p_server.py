@@ -4,6 +4,14 @@ import socketserver
 import threading
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 
 class PeerRequestHandler(http.server.SimpleHTTPRequestHandler):
@@ -30,7 +38,7 @@ class PeerRequestHandler(http.server.SimpleHTTPRequestHandler):
             folder = self.server.shared_folder
         except AttributeError:
             # Fallback if it wasn't set correctly (prevents the crash you just saw)
-            print("Error: shared_folder not set on server instance")
+            logging.error("Error: shared_folder not set on server instance")
             return self.send_error(500, "Server Configuration Error")
 
         # Resolve paths to prevent path traversal
@@ -61,9 +69,9 @@ class PeerRequestHandler(http.server.SimpleHTTPRequestHandler):
             with open(file_path, "rb") as f:
                 while chunk := f.read(4096):
                     self.wfile.write(chunk)
-            print(f"Served: {filename} -> {self.client_address[0]}")
+            logging.info(f"Served: {filename} -> {self.client_address[0]}")
         except Exception as e:
-            print(f"Upload error: {e}")
+            logging.error(f"Upload error: {e}")
 
 
 class P2PServer:
@@ -87,7 +95,7 @@ class P2PServer:
             target=self.httpd.serve_forever, daemon=True
         )
         self.server_thread.start()
-        print(f"File Server running on port {self.port}")
+        logging.info(f"File Server running on port {self.port}")
 
     def stop(self):
         """Stops the server and releases the port"""
@@ -95,7 +103,7 @@ class P2PServer:
             self.httpd.shutdown()
             self.httpd.server_close()
             self.httpd = None
-            print("File Server stopped")
+            logging.info("File Server stopped")
         if self.server_thread:
             self.server_thread.join()
             self.server_thread = None
