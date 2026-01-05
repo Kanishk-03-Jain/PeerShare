@@ -14,19 +14,19 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-class ShareNotesError(Exception):
+class PeerShareError(Exception):
     """Base exception for client errors"""
 
     pass
 
 
-class AuthenticationError(ShareNotesError):
+class AuthenticationError(PeerShareError):
     """Raised when login fails"""
 
     pass
 
 
-class ShareNotesClient:
+class PeerShareClient:
     def __init__(
         self,
         username: str,
@@ -80,7 +80,7 @@ class ShareNotesClient:
 
         except requests.exceptions.RequestException as e:
             logger.error(f"Login connection failed: {e}")
-            raise ShareNotesError(f"Login connection failed: {e}")
+            raise PeerShareError(f"Login connection failed: {e}")
 
     def initialize(self):
         """Setup folder and start server"""
@@ -129,7 +129,7 @@ class ShareNotesClient:
 
         except requests.exceptions.RequestException as e:
             logger.error(f"Failed to announce: {e}")
-            raise ShareNotesError(f"Announcement failed: {e}")
+            raise PeerShareError(f"Announcement failed: {e}")
 
     def send_heartbeat(self):
         """Ping the server to keep the session alive"""
@@ -152,5 +152,5 @@ class ShareNotesClient:
                 self.send_heartbeat()
         except KeyboardInterrupt:
             logger.info("Shutting down...")
-        except ShareNotesError as e:
+        except PeerShareError as e:
             logger.error(f"Fatal Client Error: {e}")

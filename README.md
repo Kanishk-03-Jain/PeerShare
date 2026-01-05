@@ -1,6 +1,6 @@
-# Share Notes
+# PeerShare
 
-Share Notes is a Peer-to-Peer (P2P) file sharing application designed to allow users to easily share notes and files directly with each other. It uses a central tracker server to discover peers and files, while the actual file transfer happens directly between clients.
+PeerShare is a Peer-to-Peer (P2P) file sharing application designed to allow users to easily share notes and files directly with each other. It uses a central tracker server to discover peers and files, while the actual file transfer happens directly between clients.
 
 ## Architecture
 

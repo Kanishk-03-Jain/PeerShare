@@ -6,7 +6,7 @@ import threading
 import time
 from typing import Optional
 
-from client_app.core import ShareNotesClient, AuthenticationError
+from client_app.core import PeerShareClient, AuthenticationError
 from client_app import downloader, config, schemas
 
 logging.basicConfig(level=logging.INFO)
@@ -22,7 +22,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-client_service: Optional[ShareNotesClient] = None
+client_service: Optional[PeerShareClient] = None
 client_thread: Optional[threading.Thread] = None
 stop_event = threading.Event()
 
@@ -82,7 +82,7 @@ async def login(payload: dict):
 
     # Initialize client
     try:
-        client_service = ShareNotesClient(username, password)
+        client_service = PeerShareClient(username, password)
         user_data = client_service.login()
         client_service.initialize()
 

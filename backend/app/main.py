@@ -57,7 +57,7 @@ load_dotenv()
 
 @app.get("/")
 async def root():
-    return {"message": "Hello! This is root for share-notes server"}
+    return {"message": "Hello! This is root for PeerShare server"}
 
 
 @app.post(

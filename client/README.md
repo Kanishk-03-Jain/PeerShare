@@ -1,6 +1,6 @@
-# Share Notes - Client
+# PeerShare - Client
 
-The Client is the user-facing application for Share Notes. It uses a **hybrid architecture** combining a local Python backend for robust networking with a modern Next.js frontend for the UI.
+The Client is the user-facing application for PeerShare. It uses a **hybrid architecture** combining a local Python backend for robust networking with a modern Next.js frontend for the UI.
 
 ## Architecture
 

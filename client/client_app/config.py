@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 # Constants
 TRACKER_SERVER_URL = "https://share-notes-fh45.onrender.com"
-APP_DIR = Path.home() / ".share-notes"
+APP_DIR = Path.home() / ".peer-share"
 CONFIG_FILE = APP_DIR / "config.json"
 
 # Defaults

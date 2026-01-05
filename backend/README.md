@@ -1,6 +1,6 @@
-# Share Notes - Backend (Tracker Server)
+# PeerShare - Backend (Tracker Server)
 
-The Backend acts as the "Tracker" for the Share Notes P2P network. It stores user information and an index of available files, allowing clients to find each other.
+The Backend acts as the "Tracker" for the PeerShare P2P network. It stores user information and an index of available files, allowing clients to find each other.
 
 ## Features
 -   User Authentication (JWT).

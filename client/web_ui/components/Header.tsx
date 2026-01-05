@@ -5,21 +5,21 @@ import { apiRequest } from "@/lib/api"
 import { Button } from "./ui/button"
 
 export default function Header() {
-    const router = useRouter();
+  const router = useRouter();
 
-    const handleLogout = async () => {
-        try {
-            await apiRequest("/api/auth/logout", { method: "POST" });
-            router.push("/login"); // Redirect to login
-        } catch (err) {
-            console.error("Logout failed", err);
-        }
-    };
+  const handleLogout = async () => {
+    try {
+      await apiRequest("/api/auth/logout", { method: "POST" });
+      router.push("/login"); // Redirect to login
+    } catch (err) {
+      console.error("Logout failed", err);
+    }
+  };
 
-    return (
+  return (
     <header className="flex items-center justify-between p-4 border-b bg-white">
       <Link href="/" className="text-xl font-bold">
-        ShareNotes
+        PeerShare
       </Link>
       <div className="flex items-center space-x-4">
         <Link href="/" className="hover:underline">
