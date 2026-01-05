@@ -36,11 +36,15 @@ To run the complete system entirely on your own infrastructure, you need to set 
 
 ### 2. Quick Start (Client Only)
 If you want to try the file-sharing functionality immediately without hosting your own server, you can use our public testing tracker.
+* **Server URL:** `https://share-notes-fh45.onrender.com`
+* **Note:** The server sleeps when inactive.Please open the URL above in your browser to wake it up before use (this may take a few minutes).
 
 1.  Follow the **[Client Setup Guide](./client/README.md)**.
 2.  The client is pre-configured to use the public tracker by default.
 
 > **⚠️ Important Notice:** The public tracker is provided strictly for functionality testing. Please do not attempt DDoS attacks, stress testing, or spamming on this server. For production use or heavy load testing, please host your own backend.
+Also, the public tracker may be reset periodically, which could result in loss of user accounts and shared file indexes.
+
 
 ## Features
 
