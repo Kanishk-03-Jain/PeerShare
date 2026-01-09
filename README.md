@@ -52,4 +52,4 @@ Also, the public tracker may be reset periodically, which could result in loss o
 -   **User Accounts**: Secure signup and login.
 -   **Search**: Find files shared by other users on the network.
 -   **Local Management**: Configure your shared folders and download locations.
--   **Real-time Status**: See who is online and what they are sharing.
+-   **Real-time Status**: See who is online and what they are sharing. 
