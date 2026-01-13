@@ -52,8 +52,12 @@ export default function SigninForm() {
                 // Handle case where API returns 200 but logic says failure
                 setError(data.message || "Login failed");
             }
-        } catch (err: unknown) {
-            if (err instanceof Error) {
+        } catch (err: any) {
+            console.log(err)
+            if (err?.type === "validation") {
+                const passwordErr = err.errors[0].msg;
+                setError(passwordErr || "Invalid Input")
+            } else if (err?.type === "generic") {
                 setError(err.message);
             } else {
                 setError("An unknown error occurred");

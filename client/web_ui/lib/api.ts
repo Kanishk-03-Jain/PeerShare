@@ -19,7 +19,19 @@ export async function apiRequest(path:string, options?: RequestInit) {
 
     if (!response.ok) {
         const errorBody = await response.json().catch(() => ({}));
-        throw new Error(errorBody.detail || "Something went wrong");
+        // FastAPI validation error
+        console.log("errorBody: ", errorBody)
+        if (Array.isArray(errorBody.detail.detail)) {
+            throw {
+                type: "validation",
+                errors: errorBody.detail.detail,
+            };
+        
+        }
+        throw {
+            type: "generic",
+            message: errorBody.detail || "Something went wrong",
+        };
     }
 
     return response.json();

@@ -46,6 +46,8 @@ async def signup(payload: dict):
         resp.raise_for_status()
         data = resp.json()
         logger.info(f"Successfully signed up as {data.get('user', {}).get('username')}")
+        logger.info(f"logging in with the same credentials")
+        await login(payload=payload)
         return data
 
     except requests.exceptions.HTTPError as e:
@@ -185,12 +187,14 @@ async def update_config(payload: dict):
     Update configuration settings.
     Payload can contain: port, shared_folder, download_folder, ngrok_authtoken
     """
+    print("payload: ", payload)
     allowed_keys = ["tracker_server_url", "port", "shared_folder", "download_folder", "ngrok_authtoken"]
     try:
         updated = False
         for key in allowed_keys:
             if key in payload:
                 config.settings.set(key, payload[key])
+                print(config.settings.get(key))
                 updated = True
 
         if updated:

@@ -37,24 +37,32 @@ export default function SignupForm() {
     const [error, setError] = useState("");
     const router = useRouter();
 
-    const handleLogin = async (e: React.FormEvent) => {
+    const handleSignUp = async (e: React.FormEvent) => {
         e.preventDefault(); // stop page reload
         setError("");
-
+        
+        if (username.length < 3) {
+            setError("Username must be at least 3 characters long.");
+            return;
+        }
+        if (password.length < 8) {
+            setError("Password must be at least 8 characters long.");
+            return;
+        }
         try {
-            const data = await apiRequest("/api/signup", {
+            await apiRequest("/api/signup", {
                 method: "POST",
                 body: JSON.stringify({ username, password, email }),
+                credentials: "include"
             });
+            router.push("/");   // redirect to dashboard
 
-            if (data.status === "success" || data.ok) {
-                router.push("/login");   // redirect to dashboard
-            } else {
-                // Handle case where API returns 200 but logic says failure
-                setError(data.message || "Signup failed");
-            }
-        } catch (err: unknown) {
-            if (err instanceof Error) {
+        } catch (err: any) {
+            console.log(err)
+            if (err?.type === "validation") {
+                const passwordErr = err.errors[0].msg;
+                setError(passwordErr || "Invalid Input")
+            } else if (err?.type === "generic") {
                 setError(err.message);
             } else {
                 setError("An unknown error occurred");
@@ -65,7 +73,7 @@ export default function SignupForm() {
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-gray-50 px-4">
         <div className={styles.container}>
-        <form onSubmit={handleLogin}>
+        <form onSubmit={handleSignUp}>
             <Card>
             <CardHeader className={styles.header}>
                 <CardTitle className={styles.title}>Sign Up</CardTitle>

@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label"
 
 export default function Settings() {
     const [config, setConfig] = useState({
-        trackerServerURL: "",
+        tracker_server_url: "",
         port: "",
         shared_folder: "",
         download_folder: "",
@@ -17,7 +17,7 @@ export default function Settings() {
     useEffect(() => {
         apiRequest("/api/config").then((data) => {
             setConfig({
-                trackerServerURL: data.tracker_server_url,
+                tracker_server_url: data.tracker_server_url,
                 port: String(data.port),
                 shared_folder: data.shared_folder,
                 download_folder: data.download_folder,
@@ -45,8 +45,8 @@ export default function Settings() {
       <div className="space-y-2">
         <Label>Tracker Server URL</Label>
         <Input 
-            value={config.trackerServerURL} 
-            onChange={(e) => setConfig({...config, trackerServerURL: e.target.value})} 
+            value={config.tracker_server_url} 
+            onChange={(e) => setConfig({...config, tracker_server_url: e.target.value})} 
         />
       </div>
 

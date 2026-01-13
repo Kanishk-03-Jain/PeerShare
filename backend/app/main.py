@@ -93,6 +93,7 @@ async def signup(user_data: schemas.UserSignup, db: Session = Depends(database.g
         "user": schemas.UserResponse(
             user_id=user.user_id, username=user.username, email=user.email
         ),
+        "status": "success",
     }
 
 
