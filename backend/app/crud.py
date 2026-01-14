@@ -86,7 +86,9 @@ def update_last_heartbeat(db: Session, user_id: int) -> int:
     return result.rowcount
 
 
-def search_files(db: Session, query: str) -> list[tuple[models.File, models.ActivePeer, models.User]]:
+def search_files(
+    db: Session, query: str
+) -> list[tuple[models.File, models.ActivePeer, models.User]]:
     """Searches for files on other active peers"""
     stmt = (
         select(models.File, models.ActivePeer, models.User)

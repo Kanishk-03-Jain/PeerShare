@@ -12,8 +12,10 @@ from sqlalchemy.orm import Session
 from . import database, schemas, crud, models
 
 SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("ALGORITHM",  "HS256")
-ACCESS_TOKEN_EXPIRE_MINUTES = float(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 60 * 2))  # minutes
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = float(
+    os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 60 * 2)
+)  # minutes
 
 password_hash = PasswordHash.recommended()
 
@@ -74,7 +76,7 @@ async def get_current_user(
     if token_data.username is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid Authentication token"
+            detail="Invalid Authentication token",
         )
     user = crud.get_user_by_username(db, token_data.username)
     if user is None:

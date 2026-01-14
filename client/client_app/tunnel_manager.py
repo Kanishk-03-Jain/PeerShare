@@ -29,3 +29,12 @@ def start_ngrok_tunnel(port, auth_token=None):
     except Exception as e:
         logger.error(f"Failed to start Ngrok: {e}")
         return None
+
+
+def kill_tunnels():
+    """Stop all running ngrok tunnels"""
+    try:
+        ngrok.kill()
+        logger.info("Stopped all ngrok tunnels")
+    except Exception as e:
+        logger.error(f"Failed to kill ngrok tunnels: {e}")

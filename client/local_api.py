@@ -169,15 +169,13 @@ async def get_status():
 
 @app.get("/api/config")
 async def get_config():
-    """Return current configuration, masking sensitive data if needed"""
-    token = config.settings.NGROK_TOKEN
-    masked = token[:4] + "****" + token[-4:] if token else "token not set"
+    """Return current configuration"""
     return {
         "tracker_server_url": config.settings.TRACKER_SERVER_URL,
         "port": config.settings.PORT,
         "shared_folder": config.settings.SHARED_FOLDER,
         "download_folder": config.settings.DOWNLOAD_FOLDER,
-        "ngrok_configured": masked,
+        "ngrok_configured": config.settings.NGROK_TOKEN,
     }
 
 
@@ -188,19 +186,40 @@ async def update_config(payload: dict):
     Payload can contain: port, shared_folder, download_folder, ngrok_authtoken
     """
     print("payload: ", payload)
-    allowed_keys = ["tracker_server_url", "port", "shared_folder", "download_folder", "ngrok_authtoken"]
+    allowed_keys = [
+        "tracker_server_url",
+        "port",
+        "shared_folder",
+        "download_folder",
+        "ngrok_authtoken",
+    ]
     try:
-        updated = False
+        updated_keys = []
         for key in allowed_keys:
             if key in payload:
-                config.settings.set(key, payload[key])
-                print(config.settings.get(key))
-                updated = True
+                # Optional: Check if value actually changed to avoid unnecessary re-announce
+                current_val = config.settings.get(key)
+                new_val = payload[key]
 
-        if updated:
-            return {"status": "success", "message": "Configuration updated"}
+                if str(current_val) != str(new_val):
+                    config.settings.set(key, new_val)
+                    logger.info(f"updated: {key} -> {new_val}")
+                    updated_keys.append(key)
+
+        if len(updated_keys) > 0:
+            count = 0
+            if client_service:
+                # Synchronous update - blocks until re-announced
+                count = client_service.update_configuration(updated_keys)
+            return {
+                "status": "success",
+                "message": f"Configuration updated. Services restarted. Announced {count} files.",
+            }
         else:
-            return {"status": "ignored", "message": "No valid keys found"}
+            return {
+                "status": "ignored",
+                "message": "No valid keys found or no changes detected",
+            }
 
     except Exception as e:
         logger.error(f"Failed to update config: {e}")

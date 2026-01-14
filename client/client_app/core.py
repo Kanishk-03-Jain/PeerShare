@@ -1,7 +1,5 @@
 import os
 import requests
-import time
-import getpass
 import logging
 from typing import List, Optional
 
@@ -45,7 +43,7 @@ class PeerShareClient:
         self.local_ip = utils.get_local_ip()
         self.server = p2p_server.P2PServer(port, folder)
 
-    def _get_headers(self):
+    def _get_headers(self) -> dict:
         """Get request headers with authentication"""
         headers = {}
         if self.access_token:
@@ -107,7 +105,9 @@ class PeerShareClient:
         )
 
         if self.user_id is None:
-            raise RuntimeError("User_id not available, user must be authenticated first")
+            raise RuntimeError(
+                "User_id not available, user must be authenticated first"
+            )
         announce_payload = schemas.FileAnnounce(
             user_id=self.user_id,
             port=self.port,
@@ -141,18 +141,26 @@ class PeerShareClient:
         except Exception as e:
             logger.warning(f"Ping failed (Tracker might be down): {e}")
 
-    def run_forever(self):
-        """Main Loop - kept for legacy CLI usage"""
-        try:
-            self.login()
-            self.initialize()
-            self.announce_files()
+    def update_configuration(self, changed_keys: List[str]) -> int:
+        """Reloads configuration, handling server restarts and re-authentication"""
+        logger.info(f"Updating configuration for keys: {changed_keys}")
 
-            logger.info("Client is running. Press Ctrl+C to stop.")
-            while True:
-                time.sleep(30)
-                self.send_heartbeat()
-        except KeyboardInterrupt:
-            logger.info("Shutting down...")
-        except PeerShareError as e:
-            logger.error(f"Fatal Client Error: {e}")
+        # Update local state from global config
+        self.port = config.settings.PORT
+        self.folder = config.settings.SHARED_FOLDER
+
+        # Stop everything (Server + Tunnels)
+        if self.server:
+            self.server.stop()
+        tunnel_manager.kill_tunnels()
+
+        # Handle Tracker Change or Login (needs re-login before announce)
+        if "tracker_server_url" in changed_keys:
+            logger.info("Tracker URL changed, re-authenticating...")
+            self.login()
+
+        # Start Server
+        self.server = p2p_server.P2PServer(self.port, self.folder)
+        self.server.start()
+
+        return self.announce_files()
