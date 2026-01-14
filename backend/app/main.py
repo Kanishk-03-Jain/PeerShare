@@ -143,7 +143,9 @@ async def announce_files(
         )
 
     # Determining the IP of the client
-    client_ip = payload.ip_address if payload.ip_address else request.client.host
+    client_ip = payload.ip_address or (
+        request.client.host if request.client else "unknown"
+    )
     logger.info(f"User {payload.user_id} is online at {client_ip}:{payload.port}")
 
     # announce the files to the server and update db

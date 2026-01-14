@@ -7,7 +7,13 @@ from sqlalchemy.orm import sessionmaker
 
 load_dotenv()
 
-engine = create_engine(os.getenv("SQLALCHEMY_DATABASE_URL"))
+DATABASE_URL = os.getenv("SQLALCHEMY_DATABASE_URL")
+
+if DATABASE_URL is None:
+    raise RuntimeError("SQLALCHEMY_DATABASE_URL is not set")
+
+
+engine = create_engine(DATABASE_URL)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

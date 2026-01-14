@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select, update, delete
 from sqlalchemy.dialects.postgresql import insert
 from datetime import datetime, timezone, timedelta
+from sqlalchemy.engine import CursorResult
 
 from . import models, schemas
 
@@ -80,11 +81,12 @@ def update_last_heartbeat(db: Session, user_id: int) -> int:
         .values(last_heartbeat=datetime.now(timezone.utc))
     )
     result = db.execute(stmt)
+    assert isinstance(result, CursorResult)
     db.commit()
     return result.rowcount
 
 
-def search_files(db: Session, query: str):
+def search_files(db: Session, query: str) -> list[tuple[models.File, models.ActivePeer, models.User]]:
     """Searches for files on other active peers"""
     stmt = (
         select(models.File, models.ActivePeer, models.User)
@@ -92,7 +94,7 @@ def search_files(db: Session, query: str):
         .join(models.User, models.ActivePeer.user_id == models.User.user_id)
         .where(models.File.file_name.ilike(f"%{query}%"))
     )
-    return db.execute(stmt).all()
+    return list(db.execute(stmt).tuples().all())
 
 
 def remove_inactive_peers(db: Session, threshold_seconds: int = 60) -> int:
@@ -105,5 +107,6 @@ def remove_inactive_peers(db: Session, threshold_seconds: int = 60) -> int:
     )
 
     result = db.execute(stmt)
+    assert isinstance(result, CursorResult)
     db.commit()
     return result.rowcount

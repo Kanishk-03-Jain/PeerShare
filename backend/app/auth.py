@@ -13,7 +13,7 @@ from . import database, schemas, crud, models
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM",  "HS256")
-ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 60 * 2)  # minutes
+ACCESS_TOKEN_EXPIRE_MINUTES = float(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 60 * 2))  # minutes
 
 password_hash = PasswordHash.recommended()
 
@@ -32,12 +32,13 @@ def authenticate_user(
     username: str,
     password: str,
     db: Session = Depends(database.get_db),
-) -> Union[models.User, bool]:
+) -> models.User:
     user = crud.get_user_by_username(db, username)
-    if not user:
-        return False
-    if not verify_password(password, user.password_hash):
-        return False
+    if not user or not verify_password(password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+        )
     return user
 
 
@@ -70,6 +71,11 @@ async def get_current_user(
         token_data = schemas.TokenData(username=username)
     except InvalidTokenError:
         raise credentials_exception
+    if token_data.username is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Authentication token"
+        )
     user = crud.get_user_by_username(db, token_data.username)
     if user is None:
         raise credentials_exception
@@ -77,7 +83,7 @@ async def get_current_user(
 
 
 async def get_current_active_user(
-    current_user: Annotated[schemas.User, Depends(get_current_user)],
+    current_user: Annotated[models.User, Depends(get_current_user)],
 ) -> models.User:
     # if current_user.disabled:
     #     raise HTTPException(status_code=400, detail="Inactive user")
