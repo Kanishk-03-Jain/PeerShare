@@ -21,7 +21,7 @@ import sys
 # Configure logging
 handlers = [
     logging.StreamHandler(sys.stdout),
-    logging.FileHandler("backend.log"),
+    logging.StreamHandler(sys.stdout),
 ]
 logging.basicConfig(
     level=logging.INFO,
@@ -65,14 +65,14 @@ load_dotenv()
 
 
 @app.get("/")
-async def root():
+def root():
     return {"message": "Hello! This is root for PeerShare server"}
 
 
 @app.post(
     "/signup", response_model=schemas.TokenResponse, status_code=status.HTTP_201_CREATED
 )
-async def signup(user_data: schemas.UserSignup, db: Session = Depends(database.get_db)):
+def signup(user_data: schemas.UserSignup, db: Session = Depends(database.get_db)):
     existing_user = crud.get_user_by_username(db, user_data.username)
     if existing_user:
         raise HTTPException(
@@ -107,7 +107,7 @@ async def signup(user_data: schemas.UserSignup, db: Session = Depends(database.g
 
 
 @app.post("/login", response_model=schemas.TokenResponse)
-async def login(credentials: schemas.UserLogin, db: Session = Depends(database.get_db)):
+def login(credentials: schemas.UserLogin, db: Session = Depends(database.get_db)):
     """Login and get access token"""
     user = crud.get_user_by_username(db, credentials.username)
     if not user:
@@ -136,7 +136,7 @@ async def login(credentials: schemas.UserLogin, db: Session = Depends(database.g
 
 
 @app.post("/announce")
-async def announce_files(
+def announce_files(
     payload: schemas.FileAnnounce,  # handles JSON body
     request: Request,  # gets IP address of the client
     current_user: models.User = Depends(auth.get_current_active_user),
@@ -163,7 +163,7 @@ async def announce_files(
 
 
 @app.post("/ping")
-async def peer_ping(
+def peer_ping(
     current_user: models.User = Depends(auth.get_current_active_user),
     db: Session = Depends(database.get_db),
 ):
@@ -182,7 +182,7 @@ async def peer_ping(
 
 
 @app.get("/search", response_model=List[schemas.SearchResult])
-async def search_files(q: str, db: Session = Depends(database.get_db)):
+def search_files(q: str, db: Session = Depends(database.get_db)):
     """search for the files"""
 
     # Search database for the required files
@@ -216,7 +216,7 @@ async def search_files(q: str, db: Session = Depends(database.get_db)):
 
 
 @app.get("/token")
-async def login_for_access_token(
+def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: Session = Depends(database.get_db),
 ) -> schemas.Token:
@@ -235,7 +235,7 @@ async def login_for_access_token(
 
 
 @app.get("/users/me", response_model=schemas.User)
-async def read_users_me(
+def read_users_me(
     current_user: Annotated[schemas.User, Depends(auth.get_current_active_user)],
 ):
     return current_user
