@@ -18,6 +18,9 @@ def start_ngrok_tunnel(port, auth_token=None):
         return None
 
     try:
+        # Kill any existing tunnels/processes to avoid "limited to 1 simultaneous ngrok agent session" error
+        kill_tunnels()
+
         logger.info("Starting ngrok tunnel...")
         conf.get_default().auth_token = token
 

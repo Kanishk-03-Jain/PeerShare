@@ -34,6 +34,16 @@ def upsert_file_announcement(
     db: Session, payload: schemas.FileAnnounce, client_ip: str
 ) -> int:
     """Handles adding files and updating active peer status"""
+    
+    # First, cleanup existing entries for this specific client instance
+    # This ensures we don't have stale files if the folder changed
+    cleanup_stmt = delete(models.ActivePeer).where(
+        models.ActivePeer.user_id == payload.user_id,
+        models.ActivePeer.ip_address == client_ip,
+        models.ActivePeer.port == payload.port
+    )
+    db.execute(cleanup_stmt)
+    
     for file in payload.files:
         # insert file if not exits
         file_stmt = (

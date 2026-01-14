@@ -9,7 +9,17 @@ from typing import Optional
 from client_app.core import PeerShareClient, AuthenticationError
 from client_app import downloader, config, schemas
 
-logging.basicConfig(level=logging.INFO)
+# Logging is configured in client_app.core, but we ensure it here too just in case
+handlers = [
+    logging.StreamHandler(),
+    logging.FileHandler("client.log"),
+]
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=handlers,
+    force=True
+)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()

@@ -16,9 +16,18 @@ import httpx
 from .database import SessionLocal
 
 # Configure logging
+import sys
+
+# Configure logging
+handlers = [
+    logging.StreamHandler(sys.stdout),
+    logging.FileHandler("backend.log"),
+]
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=handlers,
+    force=True,
 )
 logger = logging.getLogger(__name__)
 
@@ -134,7 +143,6 @@ async def announce_files(
     db: Session = Depends(database.get_db),
 ):
     """Clients announces the files they have to the server"""
-
     # Authorization Check
     if payload.user_id != current_user.user_id:
         raise HTTPException(

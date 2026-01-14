@@ -50,7 +50,11 @@ class File(Base):
         back_populates="file", cascade="all, delete-orphan"
     )
 
-    __table_args__ = CheckConstraint("file_size >= 0", name="ck_file_size_non_negative")
+    __table_args__ = (
+        CheckConstraint(
+            "file_size >= 0", name="ck_file_size_non_negative"
+        ),
+    )
 
 
 class ActivePeer(Base):

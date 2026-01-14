@@ -6,8 +6,18 @@ from typing import List, Optional
 from . import tunnel_manager, utils, config, p2p_server, schemas
 
 # Configure logging
+import sys
+
+# Configure logging
+handlers = [
+    logging.StreamHandler(sys.stdout),
+    logging.FileHandler("client.log"),
+]
 logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=handlers,
+    force=True,  # Ensure we override any existing configuration
 )
 logger = logging.getLogger(__name__)
 
@@ -115,6 +125,8 @@ class PeerShareClient:
             public_url=ngrok_url,
             files=valid_files,
         )
+
+        print("annount_payloaf: ", announce_payload)
 
         try:
             url = f"{config.settings.TRACKER_SERVER_URL}/announce"

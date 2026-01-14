@@ -44,7 +44,7 @@ class TokenResponse(BaseModel):
 class FileBase(BaseModel):
     file_hash: str = Field(..., min_length=64, max_length=64)
     file_name: str = Field(..., min_length=1, max_length=255)
-    file_size: int = Field(..., gt=0)
+    file_size: int = Field(..., ge=0)
 
     @field_validator("file_hash")
     def validate_hash(cls, v: str):
