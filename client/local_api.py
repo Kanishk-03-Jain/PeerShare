@@ -38,12 +38,12 @@ stop_event = threading.Event()
 
 
 @app.get("/")
-async def root():
+def root():
     return {"message": "This is the client server"}
 
 
 @app.post("/api/signup")
-async def signup(payload: dict):
+def signup(payload: dict):
     try:
         url = f"{config.settings.TRACKER_SERVER_URL}/signup"
         resp = requests.post(url, json=payload)
@@ -57,7 +57,7 @@ async def signup(payload: dict):
         data = resp.json()
         logger.info(f"Successfully signed up as {data.get('user', {}).get('username')}")
         logger.info(f"logging in with the same credentials")
-        await login(payload=payload)
+        login(payload=payload)
         return data
 
     except requests.exceptions.HTTPError as e:
@@ -71,7 +71,7 @@ async def signup(payload: dict):
 
 
 @app.post("/api/auth/login")
-async def login(payload: dict):
+def login(payload: dict):
     """
     Logs in the user and starts the P2P server in a background thread.
     """
@@ -140,7 +140,7 @@ async def login(payload: dict):
 
 
 @app.post("/api/auth/logout")
-async def logout():
+def logout():
     global client_service, stop_event, client_thread
 
     if client_service is None:
@@ -159,7 +159,7 @@ async def logout():
 
 
 @app.get("/api/status")
-async def get_status():
+def get_status():
     """Returns the current status of the client."""
     if client_service is None:
         return {"online": False, "status": "Offline"}
@@ -178,7 +178,7 @@ async def get_status():
 
 
 @app.get("/api/config")
-async def get_config():
+def get_config():
     """Return current configuration"""
     return {
         "tracker_server_url": config.settings.TRACKER_SERVER_URL,
@@ -190,7 +190,7 @@ async def get_config():
 
 
 @app.post("/api/config")
-async def update_config(payload: dict):
+def update_config(payload: dict):
     """
     Update configuration settings.
     Payload can contain: port, shared_folder, download_folder, ngrok_authtoken
@@ -239,13 +239,13 @@ async def update_config(payload: dict):
 
 
 @app.get("/api/search")
-async def search(q: str):
+def search(q: str):
     results = downloader.search_tracker(q)
     return results
 
 
 @app.post("/api/download")
-async def trigger_download(file_info: dict, background_tasks: BackgroundTasks):
+def trigger_download(file_info: dict, background_tasks: BackgroundTasks):
     if client_service is None:
         raise HTTPException(status_code=401, detail="Not logged in")
 
