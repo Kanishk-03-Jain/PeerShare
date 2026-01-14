@@ -30,7 +30,7 @@ class PeerShareClient:
     def __init__(
         self,
         username: str,
-        password: str = None,
+        password: Optional[str] = None,
         port: int = config.settings.PORT,
         folder: str = config.settings.SHARED_FOLDER,
     ):
@@ -106,6 +106,8 @@ class PeerShareClient:
             self.port, auth_token=config.settings.NGROK_TOKEN
         )
 
+        if self.user_id is None:
+            raise RuntimeError("User_id not available, user must be authenticated first")
         announce_payload = schemas.FileAnnounce(
             user_id=self.user_id,
             port=self.port,

@@ -5,6 +5,7 @@ import threading
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 import logging
+from typing import cast
 
 # Configure logging
 logging.basicConfig(
@@ -13,6 +14,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+class PeerTCPServer(socketserver.TCPServer):
+    def __init__(self, server_address, handler, shared_folder: str):
+        super().__init__(server_address, handler)
+        self.shared_folder: str = shared_folder
 
 class PeerRequestHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
@@ -35,7 +40,7 @@ class PeerRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         # Server instance is avalaible here
         try:
-            folder = self.server.shared_folder
+            folder = cast(PeerTCPServer, self.server).shared_folder
         except AttributeError:
             # Fallback if it wasn't set correctly (prevents the crash you just saw)
             logging.error("Error: shared_folder not set on server instance")
@@ -54,7 +59,7 @@ class PeerRequestHandler(http.server.SimpleHTTPRequestHandler):
         else:
             self.send_error(404, "File not found")
 
-    def _send_file(self, file_path: str, filename: str):
+    def _send_file(self, file_path: Path, filename: str):
 
         try:
             self.send_response(200)
@@ -85,11 +90,8 @@ class P2PServer:
         """Starts the server in background thread"""
         socketserver.TCPServer.allow_reuse_address = True
 
-        # create the server with the standard class
-        self.httpd = socketserver.TCPServer(("", self.port), PeerRequestHandler)
-
-        # Attach the custom shared folder the the server instance
-        self.httpd.shared_folder = self.shared_folder
+        # create the server with the custom class with custom shared folder
+        self.httpd = PeerTCPServer(("", self.port), PeerRequestHandler, self.shared_folder)
 
         self.server_thread = threading.Thread(
             target=self.httpd.serve_forever, daemon=True
