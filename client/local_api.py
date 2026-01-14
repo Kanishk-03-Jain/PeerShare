@@ -195,7 +195,6 @@ async def update_config(payload: dict):
     Update configuration settings.
     Payload can contain: port, shared_folder, download_folder, ngrok_authtoken
     """
-    print("payload: ", payload)
     allowed_keys = [
         "tracker_server_url",
         "port",

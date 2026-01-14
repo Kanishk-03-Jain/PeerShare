@@ -1,4 +1,4 @@
-export async function apiRequest(path:string, options?: RequestInit) {
+export async function apiRequest(path: string, options?: RequestInit) {
     const defaults = {
         headers: {
             "Content-Type": "application/json",
@@ -26,7 +26,7 @@ export async function apiRequest(path:string, options?: RequestInit) {
                 type: "validation",
                 errors: errorBody.detail.detail,
             };
-        
+
         }
         throw {
             type: "generic",

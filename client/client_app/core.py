@@ -126,8 +126,6 @@ class PeerShareClient:
             files=valid_files,
         )
 
-        print("annount_payloaf: ", announce_payload)
-
         try:
             url = f"{config.settings.TRACKER_SERVER_URL}/announce"
             resp = requests.post(
