@@ -51,9 +51,7 @@ class File(Base):
     )
 
     __table_args__ = (
-        CheckConstraint(
-            "file_size >= 0", name="ck_file_size_non_negative"
-        ),
+        CheckConstraint("file_size >= 0", name="ck_file_size_non_negative"),
     )
 
 

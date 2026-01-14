@@ -1,6 +1,7 @@
 from pyngrok import ngrok, conf
 import os
 import logging
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +21,7 @@ def start_ngrok_tunnel(port, auth_token=None):
     try:
         # Kill any existing tunnels/processes to avoid "limited to 1 simultaneous ngrok agent session" error
         kill_tunnels()
+        time.sleep(2)  # Give it a moment to cleanup
 
         logger.info("Starting ngrok tunnel...")
         conf.get_default().auth_token = token
