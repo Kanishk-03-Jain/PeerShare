@@ -132,7 +132,6 @@ class PeerShareClient:
                 url,
                 json=announce_payload.model_dump(mode="json"),
                 headers=self._get_headers(),
-                timeout=10,
             )
             resp.raise_for_status()
 
