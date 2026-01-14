@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation"
 import { apiRequest } from "@/lib/api"
 import { Button } from "./ui/button"
 
+import Image from "next/image"
+
 export default function Header() {
   const router = useRouter();
 
@@ -18,7 +20,8 @@ export default function Header() {
 
   return (
     <header className="flex items-center justify-between p-4 border-b bg-white">
-      <Link href="/" className="text-xl font-bold">
+      <Link href="/" className="flex items-center gap-2 text-xl font-bold">
+        <Image src="/images/logo.png" alt="PeerShare Logo" width={32} height={32} className="rounded-md" />
         PeerShare
       </Link>
       <div className="flex items-center space-x-4">

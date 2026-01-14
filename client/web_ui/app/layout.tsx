@@ -17,6 +17,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "PeerShare",
   description: "Secure P2P File Sharing",
+  icons: {
+    icon: '/images/logo.png',
+  },
 };
 
 export default function RootLayout({
