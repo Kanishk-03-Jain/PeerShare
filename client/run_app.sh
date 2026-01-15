@@ -5,11 +5,11 @@ set -e  # exit immediately on error
 echo "Starting project setup..."
 
 ### BACKEND ###
-echo "🔹 Setting up backend..."
+echo "Setting up backend..."
 
 # Create venv if it doesn't exist
 if [ ! -d "venv" ]; then
-  echo "📦 Creating virtual environment..."
+  echo "Creating virtual environment..."
   python3 -m venv venv
 fi
 
@@ -23,17 +23,17 @@ pip install --upgrade pip
 pip install -r requirements.txt
 
 # Run backend (modify as needed)
-echo "▶️ Running backend..."
+echo "Running backend..."
 uvicorn local_api:app &
 
 
 ### FRONTEND ###
-echo "🔹 Setting up frontend..."
+echo "Setting up frontend..."
 cd web_ui
 
 # Install node modules
 if [ ! -d "node_modules" ]; then
-  echo "📦 Installing npm dependencies..."
+  echo "Installing npm dependencies..."
   npm install
 fi
 
@@ -41,4 +41,4 @@ fi
 echo "▶️ Running frontend..."
 npm run dev
 
-echo "✅ App is running!"
+echo "App is running!"

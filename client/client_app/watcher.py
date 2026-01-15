@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 class FileEventHandler(FileSystemEventHandler):
     """Handles file system events and triggers a callback"""
-    def __init__(self, callback, debounce_seconds: float = 1.0):
+    def __init__(self, callback, debounce_seconds: float = 5.0):
         self.callback = callback
         self.debounce_seconds = debounce_seconds
         self._last_event_time = 0
