@@ -15,7 +15,29 @@ The Client is the user-facing application for PeerShare. It uses a **hybrid arch
 
 You need to run **both** the Local API and the Web UI for the client to work.
 
-### Part 1: Start the Local API
+### Quick Start (Recommended)
+
+You can run both the Local API and the Web UI with a single script:
+
+1.  **Navigate to the client directory:**
+    ```bash
+    cd client
+    ```
+
+2.  **Make the script executable (first time only):**
+    ```bash
+    chmod +x run_app.sh
+    ```
+
+3.  **Run the application:**
+    ```bash
+    ./run_app.sh
+    ```
+
+### Manual Setup
+If you prefer to run them manually:
+
+#### Part 1: Start the Local API
 
 The Local API must be running for the Web UI to function.
 
@@ -38,17 +60,17 @@ The Local API must be running for the Web UI to function.
 4.  **Run the Local API:**
 
     ```bash
-    fastapi dev local_api.py
+    fastapi dev main.py
     ```
 
     Or using Uvicorn directly:
 
     ```bash
-    uvicorn local_api:app --reload
+    uvicorn main:app --reload
     ```
     *The Local API will start on `http://127.0.0.1:8000` (default).*
 
-### Part 2: Start the Web UI
+#### Part 2: Start the Web UI
 
 1.  **Open a new terminal and navigate to the web_ui directory:**
     ```bash
@@ -85,4 +107,4 @@ In the Web UI, go to the **Settings** page to configure:
 
 -   **Port Conflicts**: The Client Local API **must** run on port `8000` because the Web UI is configured to talk to it there. If you have port conflicts, free up port 8000.
 
--   **Connection Error**: If the Web UI says "Offline", make sure the `local_api.py` script is running in the background.
+-   **Connection Error**: If the Web UI says "Offline", make sure the `main.py` script is running in the background.
