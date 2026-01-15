@@ -2,7 +2,7 @@ import os
 import json
 import logging
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -81,4 +81,4 @@ class ConfigManager:
 # Singleton instance
 settings = ConfigManager()
 
-CHUNK_SIZE = 4096
+CHUNK_SIZE = 1024 * 1024  # 1 MB

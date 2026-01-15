@@ -1,12 +1,12 @@
 import os
+import sys
 import requests
 import logging
 from typing import List, Optional
+from watchdog.observers import Observer
 
-from . import tunnel_manager, utils, config, p2p_server, schemas
+from . import tunnel_manager, utils, config, p2p_server, schemas, watcher
 
-# Configure logging
-import sys
 
 # Configure logging
 handlers = [
@@ -98,6 +98,7 @@ class PeerShareClient:
 
         # Start the P2P server if not already running
         self.server.start()
+        self.start_watcher()
 
     def announce_files(self) -> int:
         """Scans files and announce them to tracker server"""
@@ -163,6 +164,7 @@ class PeerShareClient:
         if self.server:
             self.server.stop()
         tunnel_manager.kill_tunnels()
+        self.stop_watcher()
 
         # Handle Tracker Change or Login (needs re-login before announce)
         if "tracker_server_url" in changed_keys:
@@ -172,5 +174,19 @@ class PeerShareClient:
         # Start Server
         self.server = p2p_server.P2PServer(self.port, self.folder)
         self.server.start()
+        self.start_watcher()
 
         return self.announce_files()
+    
+    def start_watcher(self):
+        self.observer = Observer()
+        event_handler = watcher.FileEventHandler(self.announce_files)
+        self.observer.schedule(event_handler, self.folder, recursive=True)
+        self.observer.start()
+        logger.info(f"Watching folder {self.folder} for changes..." )
+
+    def stop_watcher(self):
+        if self.observer:
+            self.observer.stop()
+            self.observer.join()
+            logger.info("Stopped file watcher")

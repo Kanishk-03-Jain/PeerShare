@@ -18,8 +18,21 @@ def start_ngrok_tunnel(port, auth_token=None):
         logger.warning("No ngrok auth token found")
         return None
 
+    # Check for existing tunnels
     try:
-        # Kill any existing tunnels/processes to avoid "limited to 1 simultaneous ngrok agent session" error
+        tunnels = ngrok.get_tunnels()
+        for t in tunnels:
+            # t.config['addr'] comes as "http://localhost:8000" or "localhost:8000"
+            if str(port) in t.config.get("addr", ""):
+                logger.info(f"Reusing existing ngrok tunnel: {t.public_url}")
+                return t.public_url
+    except Exception as e:
+        logger.warning(f"Could not check existing tunnels: {e}")
+
+    try:
+        # Kill any existing tunnels/processes only if we need to start fresh
+        # strict kill might be too aggressive if we want to support multiple services later
+        # but for now, we want to ensure we don't have zombie processes if we are starting fresh
         kill_tunnels()
         time.sleep(2)  # Give it a moment to cleanup
 
