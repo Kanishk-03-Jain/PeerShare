@@ -14,7 +14,7 @@ from . import database, schemas, crud, models
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = float(
-    os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 60 * 2)
+    os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 60 * 24 * 7)
 )  # minutes
 
 password_hash = PasswordHash.recommended()
