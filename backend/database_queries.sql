@@ -30,7 +30,11 @@ CREATE TABLE active_peers (
 -- 1. Index for fast searching by filename (e.g., "Find all files with 'Physics'")
 -- TRGM index (requires pg_trgm extension) is best for partial matching, 
 -- but a standard index works for exact prefix matches.
-CREATE INDEX idx_files_name ON files(file_name);
+-- Run this in your Postgres DB
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE INDEX idx_file_name_trgm ON files USING gin (file_name gin_trgm_ops);
+
+-- CREATE INDEX idx_files_name ON files(file_name);
 
 -- 2. Index to quickly find who has a specific file
 CREATE INDEX idx_active_peers_hash ON active_peers(file_hash);
