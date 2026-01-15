@@ -1,18 +1,18 @@
 from fastapi import FastAPI, Request, Depends, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from dotenv import load_dotenv
 from typing import List, Tuple
 from typing import Annotated
 from datetime import timedelta
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.orm import Session
 import logging
 
-from . import database, models, schemas, crud, auth
+from . import database, models, schemas, crud, auth, utils
 
 import asyncio
-import httpx
 from .database import SessionLocal
 
 # Configure logging
@@ -20,7 +20,6 @@ import sys
 
 # Configure logging
 handlers = [
-    logging.StreamHandler(sys.stdout),
     logging.StreamHandler(sys.stdout),
 ]
 logging.basicConfig(
@@ -61,11 +60,19 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 load_dotenv()
 
 
 @app.get("/")
-def root():
+async def root():
     return {"message": "Hello! This is root for PeerShare server"}
 
 
@@ -73,35 +80,31 @@ def root():
     "/signup", response_model=schemas.TokenResponse, status_code=status.HTTP_201_CREATED
 )
 def signup(user_data: schemas.UserSignup, db: Session = Depends(database.get_db)):
-    existing_user = crud.get_user_by_username(db, user_data.username)
-    if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already registered",
-        )
-    if user_data.email:
-        existing_email = crud.get_user_by_email(db, email=user_data.email)
-        if existing_email:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email already registered",
-            )
+    """Register a new user and return access token"""
 
+    # Hash the password
     password_hash = auth.get_password_hash(user_data.password)
     user_create = schemas.UserCreate(
         username=user_data.username, password_hash=password_hash, email=user_data.email
     )
+    try:
+        user = crud.create_user(db, user_create)
+    except IntegrityError as e:
+        db.rollback()
+        error_msg = str(e.orig)  # Contains "Key (email)=(...) already exists."
+        if "email" in error_msg:
+            detail = "Email already registered"
+        else:
+            detail = "Username already registered"
 
-    user = crud.create_user(db, user_create)
+        raise HTTPException(status_code=400, detail=detail)
 
     access_token = auth.create_access_token(data={"sub": user.username})
 
     return {
         "access_token": access_token,
         "token_type": "bearer",
-        "user": schemas.UserResponse(
-            user_id=user.user_id, username=user.username, email=user.email
-        ),
+        "user": user,
         "status": "success",
     }
 
@@ -151,9 +154,7 @@ def announce_files(
         )
 
     # Determining the IP of the client
-    client_ip = payload.ip_address or (
-        request.client.host if request.client else "unknown"
-    )
+    client_ip = utils.get_client_ip(request)
     logger.info(f"User {payload.user_id} is online at {client_ip}:{payload.port}")
 
     # announce the files to the server and update db
@@ -164,13 +165,16 @@ def announce_files(
 
 @app.post("/ping")
 def peer_ping(
+    payload: schemas.PeerPing,
+    request: Request,
     current_user: models.User = Depends(auth.get_current_active_user),
     db: Session = Depends(database.get_db),
 ):
-    """used to know if the user is active or not"""
+    """used to know if the peer is active or not"""
 
+    client_ip = utils.get_client_ip(request)
     # Update the last hartbeat of the user if still active
-    rows = crud.update_last_heartbeat(db, current_user.user_id)
+    rows = crud.update_last_heartbeat(db, current_user.user_id, client_ip, payload.port)
 
     if rows == 0:
         return {

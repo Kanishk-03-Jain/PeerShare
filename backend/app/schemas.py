@@ -109,3 +109,10 @@ class SearchResult(BaseModel):
     file_name: str
     file_size: int
     peers: List[PeerInfo]  # list on peers who have the file
+
+
+class PeerPing(BaseModel):
+    """Schema for peer ping"""
+
+    ip_address: str | None = None
+    port: int

@@ -3,23 +3,28 @@ from sqlalchemy import select, update, delete
 from sqlalchemy.dialects.postgresql import insert
 from datetime import datetime, timezone, timedelta
 from sqlalchemy.engine import CursorResult
+from typing import cast
 
 from . import models, schemas
 
 
 def get_user_by_username(db: Session, username: str) -> models.User:
+    """Get user by username"""
     return db.scalar(select(models.User).where(models.User.username == username))
 
 
 def get_user_by_email(db: Session, email: str) -> models.User:
+    """Get user by email"""
     return db.scalar(select(models.User).where(models.User.email == email))
 
 
 def get_user(db: Session, user_id: int) -> models.User:
+    """Get user by user_id"""
     return db.scalar(select(models.User).where(models.User.user_id == user_id))
 
 
 def create_user(db: Session, user: schemas.UserCreate) -> models.User:
+    """Create a new user"""
     db_user = models.User(
         username=user.username, password_hash=user.password_hash, email=user.email
     )
@@ -44,54 +49,72 @@ def upsert_file_announcement(
     )
     db.execute(cleanup_stmt)
 
-    for file in payload.files:
-        # insert file if not exits
-        file_stmt = (
-            insert(models.File)
-            .values(
-                file_hash=file.file_hash,
-                file_name=file.file_name,
-                file_size=file.file_size,
-            )
-            .on_conflict_do_nothing(index_elements=["file_hash"])
-        )
-        db.execute(file_stmt)
+    if not payload.files:
+        db.commit()
+        return 0
 
-        # upsert ActivePeers
-        peer_stmt = (
-            insert(models.ActivePeer)
-            .values(
-                user_id=payload.user_id,
-                file_hash=file.file_hash,
-                ip_address=client_ip,
-                port=payload.port,
-                public_url=payload.public_url,
-                last_heartbeat=datetime.now(timezone.utc),
-            )
-            .on_conflict_do_update(
-                constraint="active_peers_user_id_file_hash_key",
-                set_={
-                    "last_heartbeat": datetime.now(timezone.utc),
-                    "ip_address": client_ip,
-                    "port": payload.port,
-                    "public_url": payload.public_url,
-                },
-            )
+    # Prepare data for bulk insert
+    file_values = [
+        {
+            "file_hash": file.file_hash,
+            "file_name": file.file_name,
+            "file_size": file.file_size,
+        }
+        for file in payload.files
+    ]
+
+    peer_values = [
+        {
+            "user_id": payload.user_id,
+            "file_hash": file.file_hash,
+            "ip_address": client_ip,
+            "port": payload.port,
+            "public_url": payload.public_url,
+            "last_heartbeat": datetime.now(timezone.utc),
+        }
+        for file in payload.files
+    ]
+
+    # bulk upsert Files
+    file_stmt = (
+        insert(models.File)
+        .values(file_values)
+        .on_conflict_do_nothing(index_elements=["file_hash"])
+    )
+    db.execute(file_stmt)
+
+    # upsert ActivePeers
+    peer_stmt = (
+        insert(models.ActivePeer)
+        .values(peer_values)
+        .on_conflict_do_update(
+            constraint="active_peers_user_id_file_hash_key",
+            set_={
+                "last_heartbeat": datetime.now(timezone.utc),
+                "ip_address": client_ip,
+                "port": payload.port,
+                "public_url": payload.public_url,
+            },
         )
-        db.execute(peer_stmt)
+    )
+    db.execute(peer_stmt)
+
     db.commit()
     return len(payload.files)
 
 
-def update_last_heartbeat(db: Session, user_id: int) -> int:
+def update_last_heartbeat(db: Session, user_id: int, ip_address: str, port: int) -> int:
     """Update the last_heartbeat of given peer"""
     stmt = (
         update(models.ActivePeer)
-        .where(models.ActivePeer.user_id == user_id)
+        .where(
+            models.ActivePeer.user_id == user_id,
+            models.ActivePeer.ip_address == ip_address,
+            models.ActivePeer.port == port,
+        )
         .values(last_heartbeat=datetime.now(timezone.utc))
     )
-    result = db.execute(stmt)
-    assert isinstance(result, CursorResult)
+    result = cast(CursorResult, db.execute(stmt))
     db.commit()
     return result.rowcount
 

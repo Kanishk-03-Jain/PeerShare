@@ -1,4 +1,4 @@
-from typing import Annotated, Union
+from typing import Annotated
 from datetime import datetime, timedelta, timezone
 import os
 import jwt
@@ -23,10 +23,12 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify a plain password against the hashed password"""
     return password_hash.verify(plain_password, hashed_password)
 
 
 def get_password_hash(password: str) -> str:
+    """Hash a plain password"""
     return password_hash.hash(password)
 
 
@@ -35,6 +37,7 @@ def authenticate_user(
     password: str,
     db: Session = Depends(database.get_db),
 ) -> models.User:
+    """Authenticate user by username and password"""
     user = crud.get_user_by_username(db, username)
     if not user or not verify_password(password, user.password_hash):
         raise HTTPException(
@@ -45,6 +48,7 @@ def authenticate_user(
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
+    """Create a JWT access token"""
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
@@ -59,6 +63,7 @@ async def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)],
     db: Session = Depends(database.get_db),
 ) -> models.User:
+    """Get the current user from the JWT token"""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -87,6 +92,7 @@ async def get_current_user(
 async def get_current_active_user(
     current_user: Annotated[models.User, Depends(get_current_user)],
 ) -> models.User:
+    """Get the current active user"""
     # if current_user.disabled:
     #     raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
