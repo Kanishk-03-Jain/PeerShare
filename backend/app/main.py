@@ -152,7 +152,7 @@ def announce_files(
         )
 
     # Determining the IP of the client
-    client_ip = utils.get_client_ip(request)
+    client_ip = payload.ip_address if payload.ip_address else utils.get_client_ip(request)
     logger.info(f"User {payload.user_id} is online at {client_ip}:{payload.port}")
 
     # announce the files to the server and update db
@@ -170,7 +170,7 @@ def peer_ping(
 ):
     """used to know if the peer is active or not"""
 
-    client_ip = utils.get_client_ip(request)
+    client_ip = payload.ip_address if payload.ip_address else utils.get_client_ip(request)
     # Update the last hartbeat of the user if still active
     rows = crud.update_last_heartbeat(db, current_user.user_id, client_ip, payload.port)
 

@@ -13,8 +13,7 @@ def search_tracker(query: str) -> List[schemas.SearchResult]:
     """Queries the tracker and returns a list of files."""
     try:
         response = requests.get(
-            f"{config.settings.TRACKER_SERVER_URL}/search", params={"q": query},
-            headers={"ngrok-skip-browser-warning": "true"}
+            f"{config.settings.TRACKER_SERVER_URL}/search", params={"q": query}
         )
         response.raise_for_status()
         raw_results = response.json()
