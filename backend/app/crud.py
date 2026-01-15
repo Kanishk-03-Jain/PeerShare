@@ -1,9 +1,10 @@
-from sqlalchemy.orm import Session
-from sqlalchemy import select, update, delete
-from sqlalchemy.dialects.postgresql import insert
-from datetime import datetime, timezone, timedelta
-from sqlalchemy.engine import CursorResult
+from datetime import datetime, timedelta, timezone
 from typing import cast
+
+from sqlalchemy import delete, select, update
+from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.engine import CursorResult
+from sqlalchemy.orm import Session
 
 from . import models, schemas
 

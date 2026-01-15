@@ -1,8 +1,8 @@
-import os
 import hashlib
-import socket
 import logging
-from typing import List, Dict, Any
+import os
+import socket
+from typing import Any, Dict, List
 
 from .config import CHUNK_SIZE
 
@@ -40,7 +40,7 @@ def scan_folder(folder_path: str) -> List[Dict[str, Any]]:
         logger.warning(f"Shared folder does not exist: {folder_path}")
         return []
 
-    for root, dirs, files in os.walk(folder_path):
+    for root, _, files in os.walk(folder_path):
         for filename in files:
             filepath = os.path.join(root, filename)
 

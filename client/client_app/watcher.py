@@ -1,12 +1,26 @@
-import time
 import logging
+import time
+
+from watchdog.events import (
+    DirCreatedEvent,
+    DirDeletedEvent,
+    DirModifiedEvent,
+    DirMovedEvent,
+    FileCreatedEvent,
+    FileDeletedEvent,
+    FileModifiedEvent,
+    FileMovedEvent,
+    FileSystemEvent,
+    FileSystemEventHandler,
+)
 from watchdog.observers import Observer
-from watchdog.events import DirCreatedEvent, DirDeletedEvent, DirModifiedEvent, DirMovedEvent, FileCreatedEvent, FileDeletedEvent, FileModifiedEvent, FileMovedEvent, FileSystemEvent, FileSystemEventHandler
 
 logger = logging.getLogger(__name__)
 
+
 class FileEventHandler(FileSystemEventHandler):
     """Handles file system events and triggers a callback"""
+
     def __init__(self, callback, debounce_seconds: float = 5.0):
         self.callback = callback
         self.debounce_seconds = debounce_seconds
@@ -23,12 +37,15 @@ class FileEventHandler(FileSystemEventHandler):
                 self.callback()
             except Exception as e:
                 logger.error(f"Error during file change callback: {e}")
-    
+
     def on_created(self, event: DirCreatedEvent | FileCreatedEvent) -> None:
         self.on_any_event(event)
+
     def on_deleted(self, event: DirDeletedEvent | FileDeletedEvent) -> None:
         self.on_any_event(event)
+
     def on_modified(self, event: DirModifiedEvent | FileModifiedEvent) -> None:
         return self.on_any_event(event)
+
     def on_moved(self, event: DirMovedEvent | FileMovedEvent) -> None:
         return self.on_any_event(event)

@@ -1,17 +1,19 @@
+from datetime import datetime
+from typing import List
+
 from sqlalchemy import (
-    Integer,
-    String,
     BigInteger,
+    CheckConstraint,
     DateTime,
     ForeignKey,
+    Integer,
+    String,
     UniqueConstraint,
-    CheckConstraint,
 )
-from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
+
 from .database import Base
-from typing import List
-from datetime import datetime
 
 
 class User(Base):

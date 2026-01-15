@@ -1,6 +1,6 @@
-import os
 import json
 import logging
+import os
 from pathlib import Path
 from typing import Any
 
@@ -18,6 +18,9 @@ DEFAULT_CONFIG = {
     "shared_folder": os.path.abspath("./shared_folder"),
     "download_folder": os.path.abspath("./downloads"),
     "ngrok_authtoken": "",
+    "jwt_token": "",
+    "username": "",
+    "user_id": -1,
 }
 
 
@@ -76,6 +79,18 @@ class ConfigManager:
     @property
     def NGROK_TOKEN(self) -> str:
         return self.get("ngrok_authtoken")
+
+    @property
+    def JWT_TOKEN(self) -> str:
+        return self.get("jwt_token")
+
+    @property
+    def USERNAME(self) -> str:
+        return self.get("username")
+
+    @property
+    def USER_ID(self) -> int:
+        return self.get("user_id")
 
 
 # Singleton instance

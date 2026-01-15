@@ -1,22 +1,18 @@
-from fastapi import FastAPI, Request, Depends, HTTPException, status
-from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
-from dotenv import load_dotenv
-from typing import List, Tuple
-from typing import Annotated
-from datetime import timedelta
-from fastapi.security import OAuth2PasswordRequestForm
-import logging
-
-from . import database, models, schemas, crud, auth, utils
-
 import asyncio
-from .database import SessionLocal
-
-# Configure logging
+import logging
 import sys
+from contextlib import asynccontextmanager
+from datetime import timedelta
+from typing import Annotated, List, Tuple
+
+from dotenv import load_dotenv
+from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+
+from . import auth, crud, database, models, schemas, utils
 
 # Configure logging
 handlers = [
@@ -35,7 +31,7 @@ async def cleanup_task():
     """Background task to remove inactive peers periodically"""
     while True:
         try:
-            db = SessionLocal()
+            db = database.SessionLocal()
             crud.remove_inactive_peers(db)
             db.close()
         except Exception as e:
@@ -152,7 +148,9 @@ def announce_files(
         )
 
     # Determining the IP of the client
-    client_ip = payload.ip_address if payload.ip_address else utils.get_client_ip(request)
+    client_ip = (
+        payload.ip_address if payload.ip_address else utils.get_client_ip(request)
+    )
     logger.info(f"User {payload.user_id} is online at {client_ip}:{payload.port}")
 
     # announce the files to the server and update db
@@ -170,7 +168,9 @@ def peer_ping(
 ):
     """used to know if the peer is active or not"""
 
-    client_ip = payload.ip_address if payload.ip_address else utils.get_client_ip(request)
+    client_ip = (
+        payload.ip_address if payload.ip_address else utils.get_client_ip(request)
+    )
     # Update the last hartbeat of the user if still active
     rows = crud.update_last_heartbeat(db, current_user.user_id, client_ip, payload.port)
 
