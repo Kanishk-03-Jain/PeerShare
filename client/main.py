@@ -1,13 +1,14 @@
-from fastapi import FastAPI, BackgroundTasks, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-import requests
 import logging
 import threading
 import time
+from contextlib import asynccontextmanager
 from typing import Optional
 
-from client_app.core import PeerShareClient, AuthenticationError
-from client_app import downloader, config, schemas
+import requests
+from client_app import config, downloader, schemas
+from client_app.core import AuthenticationError, PeerShareClient
+from fastapi import BackgroundTasks, FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 
 # Logging is configured in client_app.core, but we ensure it here too just in case
 handlers = [
@@ -22,7 +23,72 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-app = FastAPI()
+
+client_service: Optional[PeerShareClient] = None
+client_thread: Optional[threading.Thread] = None
+stop_event = threading.Event()
+
+
+def start_background_service():
+    # Start P2P Server and Heartbeat in background
+    global client_service, client_service, stop_event
+    stop_event.clear()
+
+    def run_client_background():
+        logger.info("Starting background P2P service...")
+        # Initial announce
+        try:
+            if client_service:
+                client_service.announce_files()
+        except Exception as e:
+            logger.error(f"Failed to announce files: {e}")
+
+        while not stop_event.is_set():
+            try:
+                if client_service:
+                    client_service.send_heartbeat()
+            except Exception as e:
+                logger.warning(f"Heartbeat failed: {e}")
+
+            # Sleep in small chunks to allow quick shutdown
+            for _ in range(30):
+                if stop_event.is_set():
+                    break
+                time.sleep(1)
+
+        logger.info("Background P2P service stopped.")
+
+    client_thread = threading.Thread(target=run_client_background, daemon=True)
+    client_thread.start()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global client_service
+
+    try:
+        saved_token = config.settings.JWT_TOKEN
+        saved_username = config.settings.USERNAME
+        saved_user_id = config.settings.USER_ID
+
+        if saved_token and saved_username and saved_user_id != -1:
+            logger.info(f"Restoring session of user: {saved_username}")
+
+            client_service = PeerShareClient(
+                user_id=saved_user_id, username=saved_username, jwt_token=saved_token
+            )
+
+            client_service.initialize()
+            start_background_service()
+
+            logger.info("Session restored successfully")
+    except Exception as e:
+        logger.error(f"Failed to restore session: {e}")
+        client_service = None
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -31,10 +97,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-client_service: Optional[PeerShareClient] = None
-client_thread: Optional[threading.Thread] = None
-stop_event = threading.Event()
 
 
 @app.get("/")
@@ -94,39 +156,11 @@ def login(payload: dict):
 
     # Initialize client
     try:
-        client_service = PeerShareClient(username, password)
+        client_service = PeerShareClient(username=username, password=password)
         user_data = client_service.login()
         client_service.initialize()
 
-        # Start P2P Server and Heartbeat in background
-        stop_event.clear()
-
-        def run_client_background():
-            logger.info("Starting background P2P service...")
-            # Initial announce
-            try:
-                if client_service:
-                    client_service.announce_files()
-            except Exception as e:
-                logger.error(f"Failed to announce files: {e}")
-
-            while not stop_event.is_set():
-                try:
-                    if client_service:
-                        client_service.send_heartbeat()
-                except Exception as e:
-                    logger.warning(f"Heartbeat failed: {e}")
-
-                # Sleep in small chunks to allow quick shutdown
-                for _ in range(30):
-                    if stop_event.is_set():
-                        break
-                    time.sleep(1)
-
-            logger.info("Background P2P service stopped.")
-
-        client_thread = threading.Thread(target=run_client_background, daemon=True)
-        client_thread.start()
+        start_background_service()
 
         return {"status": "success", "user": user_data}
 
@@ -155,6 +189,9 @@ def logout():
     # We don't join/wait here to avoid blocking api, but thread will die soon.
 
     client_service = None
+    config.settings.set("jwt_token", "")
+    config.settings.set("username", "")
+    config.settings.set("user_id", -1)
     return {"status": "success", "message": "Logged out and server stopped"}
 
 
@@ -186,6 +223,9 @@ def get_config():
         "shared_folder": config.settings.SHARED_FOLDER,
         "download_folder": config.settings.DOWNLOAD_FOLDER,
         "ngrok_configured": config.settings.NGROK_TOKEN,
+        "jwt_token": config.settings.JWT_TOKEN,
+        "username": config.settings.USERNAME,
+        "user_id": config.settings.USER_ID,
     }
 
 

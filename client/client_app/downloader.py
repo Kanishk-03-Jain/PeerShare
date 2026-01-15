@@ -1,8 +1,9 @@
-import requests
-import os
 import logging
-from tqdm import tqdm
+import os
 from typing import List
+
+import requests
+from tqdm import tqdm
 
 from . import config, schemas
 

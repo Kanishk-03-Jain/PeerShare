@@ -24,7 +24,7 @@ pip install -r requirements.txt
 
 # Run backend (modify as needed)
 echo "Running backend..."
-uvicorn local_api:app &
+uvicorn main:app &
 
 
 ### FRONTEND ###

@@ -1,11 +1,11 @@
-import os
 import http.server
+import logging
+import os
 import socketserver
 import threading
 from pathlib import Path
-from urllib.parse import urlparse, parse_qs
-import logging
 from typing import cast
+from urllib.parse import parse_qs, urlparse
 
 # Configure logging
 logging.basicConfig(

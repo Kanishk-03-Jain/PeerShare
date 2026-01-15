@@ -1,12 +1,12 @@
+import logging
 import os
 import sys
-import requests
-import logging
 from typing import List, Optional
+
+import requests
 from watchdog.observers import Observer
 
-from . import tunnel_manager, utils, config, p2p_server, schemas, watcher
-
+from . import config, p2p_server, schemas, tunnel_manager, utils, watcher
 
 # Configure logging
 handlers = [
@@ -37,15 +37,17 @@ class AuthenticationError(PeerShareError):
 class PeerShareClient:
     def __init__(
         self,
-        username: str,
+        user_id: int = config.settings.USER_ID,
+        username: str = config.settings.USERNAME,
         password: Optional[str] = None,
         port: int = config.settings.PORT,
         folder: str = config.settings.SHARED_FOLDER,
+        jwt_token: str = config.settings.JWT_TOKEN,
     ):
-        self.user_id: Optional[int] = None
+        self.user_id: Optional[int] = user_id
         self.username = username
         self.password = password
-        self.access_token: Optional[str] = None
+        self.access_token: Optional[str] = jwt_token
 
         self.port = port
         self.folder = folder
@@ -53,7 +55,7 @@ class PeerShareClient:
         self.local_ip = utils.get_local_ip()
         self.server = p2p_server.P2PServer(port, folder)
 
-    def _get_headers(self) -> dict:
+    def _get_headers(self) -> dict[str, str]:
         """Get request headers with authentication"""
         headers = {}
         if self.access_token:
@@ -82,6 +84,10 @@ class PeerShareClient:
 
             self.access_token = token_resp.access_token
             self.user_id = token_resp.user.user_id
+
+            config.settings.set("jwt_token", self.access_token)
+            config.settings.set("user_id", self.user_id)
+            config.settings.set("username", self.username)
 
             logger.info(f"Successfully logged in as {token_resp.user.username}")
             return token_resp.user
@@ -119,6 +125,7 @@ class PeerShareClient:
             raise RuntimeError(
                 "User_id not available, user must be authenticated first"
             )
+
         announce_payload = schemas.FileAnnounce(
             user_id=self.user_id,
             port=self.port,
@@ -177,13 +184,13 @@ class PeerShareClient:
         self.start_watcher()
 
         return self.announce_files()
-    
+
     def start_watcher(self):
         self.observer = Observer()
         event_handler = watcher.FileEventHandler(self.announce_files)
         self.observer.schedule(event_handler, self.folder, recursive=True)
         self.observer.start()
-        logger.info(f"Watching folder {self.folder} for changes..." )
+        logger.info(f"Watching folder {self.folder} for changes...")
 
     def stop_watcher(self):
         if self.observer:
