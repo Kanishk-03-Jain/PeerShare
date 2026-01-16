@@ -7,6 +7,8 @@ from pathlib import Path
 from typing import cast
 from urllib.parse import parse_qs, urlparse
 
+from . import config
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -73,8 +75,8 @@ class PeerRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header("Content-Length", str(file_size))
             self.end_headers()
 
-            with open(file_path, "rb") as f:
-                while chunk := f.read(4096):
+            with open(file_path, "rb", buffering=config.CHUNK_SIZE) as f:
+                while chunk := f.read(config.CHUNK_SIZE):
                     self.wfile.write(chunk)
             logging.info(f"Served: {filename} -> {self.client_address[0]}")
         except Exception as e:
