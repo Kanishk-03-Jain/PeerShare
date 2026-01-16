@@ -50,8 +50,8 @@ def download_from_peer(
             with tqdm(
                 total=filesize, unit="B", unit_scale=True, desc=filename
             ) as progress_bar:
-                with open(save_path, "wb") as f:
-                    for chunk in r.iter_content(chunk_size=8192):
+                with open(save_path, "wb", buffering=config.CHUNK_SIZE) as f:
+                    for chunk in r.iter_content(chunk_size=config.CHUNK_SIZE):
                         f.write(chunk)
                         progress_bar.update(len(chunk))
 
