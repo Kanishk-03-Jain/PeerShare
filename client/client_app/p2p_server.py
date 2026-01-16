@@ -75,7 +75,7 @@ class PeerRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header("Content-Length", str(file_size))
             self.end_headers()
 
-            with open(file_path, "rb", buffering=config.CHUNK_SIZE) as f:
+            with open(file_path, "rb") as f:
                 while chunk := f.read(config.CHUNK_SIZE):
                     self.wfile.write(chunk)
             logging.info(f"Served: {filename} -> {self.client_address[0]}")
