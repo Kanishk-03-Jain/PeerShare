@@ -153,7 +153,8 @@ def download_file_strategy(file_data: schemas.SearchResult, destination: str) ->
             candidates.append((public_url, "Public Tunnel"))
 
         for base_url, method_name in candidates:
-            timeout = 3 if method_name == "Local LAN" else 15
+            # Increased timeout for LAN to allow server to spin up threads
+            timeout = 15 if method_name == "Local LAN" else 30
             download_url = f"{base_url}/download"
 
             if parallel_download(

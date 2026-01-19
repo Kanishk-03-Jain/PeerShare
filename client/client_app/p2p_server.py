@@ -17,7 +17,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-class PeerTCPServer(socketserver.TCPServer):
+class PeerTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+    daemon_threads = True  # Ensure threads exit when main program exits
+    
     def __init__(self, server_address, handler, shared_folder: str):
         super().__init__(server_address, handler)
         self.shared_folder: str = shared_folder
