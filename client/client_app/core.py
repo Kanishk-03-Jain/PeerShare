@@ -155,7 +155,11 @@ class PeerShareClient:
         """Ping the server to keep the session alive"""
         try:
             url = f"{config.settings.TRACKER_SERVER_URL}/ping"
-            requests.post(url, headers=self._get_headers())
+            resp = requests.post(url, headers=self._get_headers())
+            if resp.status_code == 401:
+                raise AuthenticationError("Session expired")
+        except AuthenticationError:
+            raise  # Re-raise to be caught by main loop
         except Exception as e:
             logger.warning(f"Ping failed (Tracker might be down): {e}")
 

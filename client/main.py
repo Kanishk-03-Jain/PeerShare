@@ -35,6 +35,7 @@ def start_background_service():
     stop_event.clear()
 
     def run_client_background():
+        global client_service
         logger.info("Starting background P2P service...")
         # Initial announce
         try:
@@ -47,6 +48,13 @@ def start_background_service():
             try:
                 if client_service:
                     client_service.send_heartbeat()
+            except AuthenticationError:
+                logger.error("Session expired. Logging out...")
+                client_service = None
+                config.settings.set("jwt_token", "")
+                config.settings.set("user_id", -1)
+                stop_event.set()
+                break
             except Exception as e:
                 logger.warning(f"Heartbeat failed: {e}")
 
@@ -183,8 +191,10 @@ def logout():
     stop_event.set()
 
     # Gracefully stop the P2P server to release the port
-    if client_service and client_service.server:
-        client_service.server.stop()
+    if client_service:
+        if client_service.server:
+            client_service.server.stop()
+        client_service.stop_watcher()
 
     # We don't join/wait here to avoid blocking api, but thread will die soon.
 
