@@ -64,21 +64,60 @@ class PeerRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_error(404, "File not found")
 
     def _send_file(self, file_path: Path, filename: str):
+        file_size = os.path.getsize(file_path)
+        start = 0
+        end = file_size - 1
+        status_code = 200
+
+        range_header = self.headers.get("Range")
+        if range_header:
+            try:
+                # Parse "bytes=X-Y"
+                _, r = range_header.split("=")
+                s, e = r.split("-")
+                start = int(s)
+
+                if e:
+                    end = int(e)
+                else:
+                    end = file_size - 1
+
+                status_code = 206
+            except ValueError:
+                # If parsing fails, ignore range and send full file
+                pass
+
+        chunk_length = (end - start) + 1
 
         try:
-            self.send_response(200)
+            self.send_response(status_code)
             self.send_header("Content-type", "application/octet-stream")
             self.send_header(
                 "Content-Disposition", f'attachment; filename="{filename}"'
             )
-            file_size = os.path.getsize(file_path)
-            self.send_header("Content-Length", str(file_size))
+
+            if status_code == 206:
+                self.send_header("Content-Range", f"bytes {start}-{end}/{file_size}")
+
+            self.send_header("Content-Length", str(chunk_length))
             self.end_headers()
 
             with open(file_path, "rb") as f:
-                while chunk := f.read(config.CHUNK_SIZE):
-                    self.wfile.write(chunk)
-            logging.info(f"Served: {filename} -> {self.client_address[0]}")
+                f.seek(start)  # Jump to the start of chunk
+
+                remaining = chunk_length
+
+                while remaining > 0:
+                    read_size = min(config.CHUNK_SIZE, remaining)
+                    data = f.read(read_size)
+                    if not data:
+                        break
+                    self.wfile.write(data)
+                    remaining -= len(data)
+
+            logging.info(
+                f"Served: {filename} ({start}-{end}) -> {self.client_address[0]}"
+            )
         except Exception as e:
             logging.error(f"Upload error: {e}")
 

@@ -96,4 +96,5 @@ class ConfigManager:
 # Singleton instance
 settings = ConfigManager()
 
-CHUNK_SIZE = 1024 * 1024  # 1 MB
+CHUNK_SIZE = 1024 * 1024 * 4  # 4 MB
+CHUNK_COUNT = 8

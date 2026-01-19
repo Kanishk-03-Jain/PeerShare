@@ -1,5 +1,6 @@
 import logging
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List
 
 import requests
@@ -26,7 +27,41 @@ def search_tracker(query: str) -> List[schemas.SearchResult]:
         return []
 
 
-def download_from_peer(
+def download_chunk(
+    download_url: str,
+    start: int,
+    end: int,
+    filename: str,
+    save_path: str,
+    timeout: int,
+    pbar: tqdm,  # Added pbar argument
+):
+    headers = {"Range": f"bytes={start}-{end}"}
+
+    try:
+        with requests.get(
+            download_url,
+            params={"name": filename},
+            headers=headers,
+            stream=True,
+            timeout=timeout,
+        ) as r:
+            r.raise_for_status()
+
+            with open(save_path, "r+b") as f:
+                f.seek(start)
+                # Use iter_content for progress updates and memory efficiency
+                for chunk in r.iter_content(chunk_size=config.CHUNK_SIZE):
+                    if chunk:
+                        f.write(chunk)
+                        pbar.update(len(chunk))
+    except Exception as e:
+        # Re-raise so the executor knows it failed
+        logger.error(f"Chunk download failed ({start}-{end}): {e}")
+        raise e
+
+
+def parallel_download(
     download_url: str,
     timeout: int,
     filename: str,
@@ -35,33 +70,59 @@ def download_from_peer(
     method_name: str,
     save_path: str,
 ) -> bool:
+    if not os.path.exists(destination):
+        os.makedirs(destination)
+
+    # pre-allocate file
     try:
-        # Stream the download so we don't crash RAM on big files
-        with requests.get(
-            download_url, params={"name": filename}, stream=True, timeout=timeout
-        ) as r:
-            r.raise_for_status()
-            logger.info(f"Connected via {method_name}!")
-
-            # Ensure download directory exists
-            if not os.path.exists(destination):
-                os.makedirs(destination)
-
-            with tqdm(
-                total=filesize, unit="B", unit_scale=True, desc=filename
-            ) as progress_bar:
-                with open(save_path, "wb") as f:
-                    for chunk in r.iter_content(chunk_size=config.CHUNK_SIZE):
-                        f.write(chunk)
-                        progress_bar.update(len(chunk))
-
-        logger.info(f"Download Complete! Saved to: {save_path}")
-        return True
-
+        with open(save_path, "wb") as f:
+            f.seek(filesize - 1)
+            f.write(b"\0")
     except Exception as e:
-        logger.warning(f"Error during {method_name}: {e}")
+        logger.error(f"Failed to allocate file: {e}")
+        return False
 
-    return False
+    # calculate chunks
+    chunk_size = filesize // config.CHUNK_COUNT
+    futures = []
+    logger.info(f"Connected via {method_name}! Starting parallel download...")
+
+    # Create a shared progress bar
+    with tqdm(
+        total=filesize, unit="B", unit_scale=True, desc=filename, unit_divisor=1024
+    ) as pbar:
+        with ThreadPoolExecutor(max_workers=config.CHUNK_COUNT) as executor:
+            for i in range(config.CHUNK_COUNT):
+                start = i * chunk_size
+                end = (
+                    filesize - 1
+                    if i == config.CHUNK_COUNT - 1
+                    else (start + chunk_size - 1)
+                )
+
+                futures.append(
+                    executor.submit(
+                        download_chunk,
+                        download_url,
+                        start,
+                        end,
+                        filename,
+                        save_path,
+                        timeout,
+                        pbar,
+                    )
+                )
+
+            # Wait for all chunks to complete
+            for future in as_completed(futures):
+                try:
+                    future.result()
+                except Exception as e:
+                    logger.error(f"Download failed: {e}")
+                    return False
+
+    logger.info(f"Download Complete! Saved to: {save_path}")
+    return True
 
 
 def download_file_strategy(file_data: schemas.SearchResult, destination: str) -> bool:
@@ -95,7 +156,7 @@ def download_file_strategy(file_data: schemas.SearchResult, destination: str) ->
             timeout = 3 if method_name == "Local LAN" else 15
             download_url = f"{base_url}/download"
 
-            if download_from_peer(
+            if parallel_download(
                 download_url,
                 timeout,
                 filename,
