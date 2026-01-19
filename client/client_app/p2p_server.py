@@ -26,6 +26,7 @@ class PeerTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
 
 class PeerRequestHandler(http.server.SimpleHTTPRequestHandler):
+    protocol_version = "HTTP/1.1"  # Support persistent connections
     def do_GET(self):
         # Parse the URL /download?name=test.txt
         parsed_url = urlparse(self.path)
@@ -104,17 +105,25 @@ class PeerRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header("Content-Length", str(chunk_length))
             self.end_headers()
 
+            self.wfile.flush()  # Ensure headers are sent
+
             with open(file_path, "rb") as f:
                 f.seek(start)  # Jump to the start of chunk
-
+                
                 remaining = chunk_length
-
                 while remaining > 0:
                     read_size = min(config.CHUNK_SIZE, remaining)
                     data = f.read(read_size)
                     if not data:
                         break
-                    self.wfile.write(data)
+                    
+                    try:
+                        self.wfile.write(data)
+                        self.wfile.flush() # Force send to network to prevent buffering issues
+                    except BrokenPipeError:
+                        logging.warning(f"Client disconnected while downloading {filename}")
+                        break
+                        
                     remaining -= len(data)
 
             logging.info(

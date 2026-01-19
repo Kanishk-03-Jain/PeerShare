@@ -97,4 +97,4 @@ class ConfigManager:
 settings = ConfigManager()
 
 CHUNK_SIZE = 1024 * 1024 * 4  # 4 MB
-CHUNK_COUNT = 8
+CHUNK_COUNT = 2
