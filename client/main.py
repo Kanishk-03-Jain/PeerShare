@@ -50,6 +50,13 @@ def start_background_service():
                     client_service.send_heartbeat()
             except AuthenticationError:
                 logger.error("Session expired. Logging out...")
+                
+                # GRACEFUL SHUTDOWN
+                if client_service:
+                    if client_service.server:
+                        client_service.server.stop()
+                    client_service.stop_watcher()
+                
                 client_service = None
                 config.settings.set("jwt_token", "")
                 config.settings.set("user_id", -1)
